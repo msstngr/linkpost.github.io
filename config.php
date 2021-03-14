@@ -2,7 +2,7 @@
 
 /* Configuration of the site */
 define('DATABASE_SERVER',   'localhost');
-define('DATABASE_USERNAME', 'nas');
+define('DATABASE_USERNAME', 'fanadigi_nas');
 define('DATABASE_PASSWORD', '@Vc9bnr212134');
-define('DATABASE_NAME',     'linkle');
-define('SITE_URL',          'http://localhost/linkle/');
+define('DATABASE_NAME',     'fanadigi_linkpost');
+define('SITE_URL',          'http://linkpost.fana.digital');
