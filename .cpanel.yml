@@ -1,7 +1,7 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/public_html/FANADIGITAL/PRODUCT/LINKPOST
+    - export DEPLOYPATH=/home/fanadigi/public_html/FANADIGITAL/PRODUCT/LINKPOST
     - /bin/cp .htaccess $DEPLOYPATH
     - /bin/cp config.php $DEPLOYPATH
     - /bin/cp index.php $DEPLOYPATH
