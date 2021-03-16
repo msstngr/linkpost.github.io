@@ -6,8 +6,10 @@ deployment:
     - /bin/cp config.php $DEPLOYPATH
     - /bin/cp index.php $DEPLOYPATH
     - /bin/cp robots.txt $DEPLOYPATH
+    - /bin/cp debug.log $DEPLOYPATH
     - /bin/cp -R app $DEPLOYPATH
     - /bin/cp -R id $DEPLOYPATH
+    - /bin/cp -R en $DEPLOYPATH
     - /bin/cp -R themes $DEPLOYPATH
     - /bin/cp -R uploads $DEPLOYPATH
     - /bin/cp -R vendor $DEPLOYPATH
