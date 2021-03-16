@@ -6,7 +6,7 @@ Options All -Indexes
 
 RewriteEngine On
 
-RewriteCond %{HTTP:HOST} /id
+RewriteCond %{HTTP:HOST} /en
 
 RewriteCond %{HTTP:Accept-Language} ^en [NC]
 RewriteRule ^$ /en/ [L,R=301]
