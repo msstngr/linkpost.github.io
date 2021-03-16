@@ -2,6 +2,10 @@ Options All -Indexes
 
 RewriteEngine On
 
+Options All -Indexes
+
+RewriteEngine On
+
 RewriteCond %{HTTP:HOST} /id
 
 RewriteCond %{HTTP:Accept-Language} ^en [NC]
