@@ -2,12 +2,12 @@ Options All -Indexes
 
 RewriteEngine On
 
-RewriteCond %{HTTP:HOST} /id
+RewriteCond %{HTTP:HOST} /en
 
-RewriteCond %{HTTP:Accept-Language} ^id [NC]
-RewriteRule ^$ /id/ [L,R=301]
+RewriteCond %{HTTP:Accept-Language} ^en [NC]
+RewriteRule ^$ /en/ [L,R=301]
 
-RewriteRule ^(id)$ index.php?lang=$1 [L,QSA]
+RewriteRule ^(en)$ index.php?lang=$1 [L,QSA]
 
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f
