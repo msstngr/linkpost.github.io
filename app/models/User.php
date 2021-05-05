@@ -17,7 +17,7 @@ class User extends Model {
         if(is_null($cache_instance->get())) {
 
             /* Get data from the database */
-            $data = db()->where('user_id', $user_id)->getOne('users');
+            $data = Database::get('*', 'users', ['user_id' => $user_id]);
 
             if($data) {
 
@@ -52,7 +52,7 @@ class User extends Model {
         if(is_null($cache_instance->get())) {
 
             /* Get data from the database */
-            $data = db()->where('email', $email)->where('token_code', $token_code)->getOne('users');
+            $data = Database::get('*', 'users', ['email' => $email, 'token_code' => $token_code]);
 
             if($data) {
 
@@ -84,11 +84,11 @@ class User extends Model {
         $this->cancel_subscription($user_id);
 
         /* Send webhook notification if needed */
-        if(settings()->webhooks->user_delete) {
+        if($this->settings->webhooks->user_delete) {
 
-            $user = db()->where('user_id', $user_id)->getOne('users', ['user_id', 'email', 'name']);
+            $user = Database::get(['user_id', 'email', 'name'], 'users', ['user_id' => $user_id]);
 
-            \Unirest\Request::post(settings()->webhooks->user_delete, [], [
+            \Unirest\Request::post($this->settings->webhooks->user_delete, [], [
                 'user_id' => $user->user_id,
                 'email' => $user->email,
                 'name' => $user->name
@@ -96,14 +96,44 @@ class User extends Model {
 
         }
 
-        /* Delete everything related to the domain that the user owns */
-        $result = database()->query("SELECT `link_id` FROM `links` WHERE `user_id` = {$user_id} AND `type` = 'biolink' AND `subtype` = 'base'");
-        while($link = $result->fetch_object()) {
-            (new \Altum\Models\Link())->delete($link->link_id);
+        /* Get all the available biolinks and iterate over them to delete the stored images */
+        $result = Database::$database->query("SELECT `settings` FROM `links` WHERE `user_id` = {$user_id} AND `type` = 'biolink' AND `subtype` = 'base'");
+        while($row = $result->fetch_object()) {
+            $row->settings = json_decode($row->settings);
+
+            /* Delete current avatar */
+            if(!empty($row->settings->image) && file_exists(UPLOADS_PATH . 'avatars/' . $row->settings->image)) {
+                unlink(UPLOADS_PATH . 'avatars/' . $row->settings->image);
+            }
+
+            /* Delete current background */
+            if(is_string($row->settings->background) && !empty($row->settings->background) && file_exists(UPLOADS_PATH . 'backgrounds/' . $row->settings->background)) {
+                unlink(UPLOADS_PATH . 'backgrounds/' . $row->settings->background);
+            }
+
+        }
+
+        /* Get all the available biolinks and iterate over them to delete the stored images */
+        $result = Database::$database->query("SELECT `subtype`, `settings` FROM `links` WHERE `user_id` = {$user_id} AND `type` = 'biolink' AND `subtype` IN ('image', 'image_grid', 'link')");
+        while($row = $result->fetch_object()) {
+            $row->settings = json_decode($row->settings);
+
+            /* Delete current image */
+            if(in_array($row->subtype, ['image', 'image_grid'])) {
+                if(!empty($link->settings->image) && file_exists(UPLOADS_PATH . 'block_images/' . $link->settings->image)) {
+                    unlink(UPLOADS_PATH . 'block_images/' . $link->settings->image);
+                }
+            }
+
+            if(in_array($row->subtype, ['link'])) {
+                if(!empty($link->settings->image) && file_exists(UPLOADS_PATH . 'block_thumbnail_images/' . $link->settings->image)) {
+                    unlink(UPLOADS_PATH . 'block_thumbnail_images/' . $link->settings->image);
+                }
+            }
         }
 
         /* Delete the record from the database */
-        db()->where('user_id', $user_id)->delete('users');
+        Database::$database->query("DELETE FROM `users` WHERE `user_id` = {$user_id}");
 
         /* Clear the cache */
         \Altum\Cache::$adapter->deleteItemsByTag('biolinks_links_user_' . $user_id);
@@ -112,7 +142,12 @@ class User extends Model {
     }
 
     public function update_last_activity($user_id) {
-        db()->where('user_id', $user_id)->update('users', ['last_activity' => \Altum\Date::$date]);
+
+        Database::update('users', ['last_activity' => \Altum\Date::$date], ['user_id' => $user_id]);
+
+        /* Clear the cache */
+        \Altum\Cache::$adapter->deleteItemsByTag('user_id=' . $user_id);
+
     }
 
     public function create(
@@ -138,38 +173,62 @@ class User extends Model {
         $billing = json_encode(['type' => 'personal', 'name' => '', 'address' => '', 'city' => '', 'county' => '', 'zip' => '', 'country' => '', 'phone' => '', 'tax_id' => '',]);
         $api_key = md5($email . microtime() . microtime());
         $ip = $is_admin_created ? null : get_ip();
-        $last_user_agent = $is_admin_created ? null : Database::clean_string($_SERVER['HTTP_USER_AGENT']);
-
-        /* Detect the location */
-        try {
-            $maxmind = $is_admin_created ? null : (new Reader(APP_PATH . 'includes/GeoLite2-Country.mmdb'))->get($ip);
-        } catch(\Exception $exception) {
-            /* :) */
-        }
-        $country = isset($maxmind) && isset($maxmind['country']) ? $maxmind['country']['iso_code'] : null;
+        $maxmind = $is_admin_created ? null : (new Reader(APP_PATH . 'includes/GeoLite2-Country.mmdb'))->get($ip);
+        $country = $maxmind ? $maxmind['country']['iso_code'] : null;
+        $user_agent = $is_admin_created ? null : Database::clean_string($_SERVER['HTTP_USER_AGENT']);
 
         /* Add the user to the database */
-        $registered_user_id = db()->insert('users', [
-            'password' => $password,
-            'email' => $email,
-            'name' => $name,
-            'billing' => $billing,
-            'api_key' => $api_key,
-            'facebook_id' => $facebook_id,
-            'email_activation_code' => $email_activation_code,
-            'plan_id' => $plan_id,
-            'plan_expiration_date' => $plan_expiration_date,
-            'plan_settings' => $plan_settings,
-            'plan_trial_done' => $plan_trial_done,
-            'language' => $language,
-            'timezone' => $timezone,
-            'active' => $active,
-            'date' => \Altum\Date::$date,
-            'ip' => $ip,
-            'country' => $country,
-            'last_user_agent' => $last_user_agent,
-            'total_logins' => $total_logins,
-        ]);
+        $stmt = Database::$database->prepare("
+            INSERT INTO 
+                `users` 
+                (
+                    `password`,
+                    `email`,
+                    `name`,
+                    `billing`,
+                    `api_key`,
+                    `facebook_id`,
+                    `email_activation_code`,
+                    `plan_id`,
+                    `plan_expiration_date`,
+                    `plan_settings`,
+                    `plan_trial_done`,
+                    `language`,
+                    `timezone`,
+                    `active`,
+                    `date`,
+                    `ip`,
+                    `country`,
+                    `last_user_agent`,
+                    `total_logins`
+                ) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ");
+        $stmt->bind_param(
+            'sssssssssssssssssss',
+            $password,
+            $email,
+            $name,
+            $billing,
+            $api_key,
+            $facebook_id,
+            $email_activation_code,
+            $plan_id,
+            $plan_expiration_date,
+            $plan_settings,
+            $plan_trial_done,
+            $language,
+            $timezone,
+            $active,
+            \Altum\Date::$date,
+            $ip,
+            $country,
+            $user_agent,
+            $total_logins
+        );
+        $stmt->execute();
+        $registered_user_id = $stmt->insert_id;
+        $stmt->close();
 
         return $registered_user_id;
     }
@@ -180,23 +239,14 @@ class User extends Model {
     public function login_aftermath_update($user_id) {
 
         $ip = get_ip();
-        $last_user_agent = Database::clean_string($_SERVER['HTTP_USER_AGENT']);
+        $maxmind = (new Reader(APP_PATH . 'includes/GeoLite2-Country.mmdb'))->get($ip);
+        $country = $maxmind ? $maxmind['country']['iso_code'] : null;
+        $user_agent = Database::clean_string($_SERVER['HTTP_USER_AGENT']);
 
-        /* Detect the location */
-        try {
-            $maxmind = (new Reader(APP_PATH . 'includes/GeoLite2-Country.mmdb'))->get($ip);
-        } catch(\Exception $exception) {
-            /* :) */
-        }
-        $country = isset($maxmind) && isset($maxmind['country']) ? $maxmind['country']['iso_code'] : null;
-
-        /* Database query */
-        db()->where('user_id', $user_id)->update('users', [
-            'ip' => $ip,
-            'country' => $country,
-            'last_user_agent' => $last_user_agent,
-            'total_logins' => db()->inc()
-        ]);
+        $stmt = Database::$database->prepare("UPDATE `users` SET `ip` = ?, `country` = ?, `last_user_agent` = ?, `total_logins` = `total_logins` + 1 WHERE `user_id` = {$user_id}");
+        $stmt->bind_param('sss', $ip, $country, $user_agent);
+        $stmt->execute();
+        $stmt->close();
 
         Logger::users($user_id, 'login.success');
 
@@ -210,12 +260,16 @@ class User extends Model {
      */
     public function cancel_subscription($user_id = false) {
 
+        if(!isset($this->settings)) {
+            throw new \Exception('Model needs to have access to the "settings" variable.');
+        }
+
         if(!isset($this->user) && !$user_id) {
             throw new \Exception('Model needs to have access to the "user" variable or pass in the $user_in.');
         }
 
         if($user_id) {
-            $this->user = db()->where('user_id', $user_id)->getOne('users', ['user_id', 'payment_subscription_id']);
+            $this->user = Database::get(['user_id', 'payment_subscription_id'], 'users', ['user_id' => $user_id]);
         }
 
         if(empty($this->user->payment_subscription_id)) {
@@ -223,14 +277,14 @@ class User extends Model {
         }
 
         $data = explode('###', $this->user->payment_subscription_id);
-        $type = $data[0];
+        $type = strtolower($data[0]);
         $subscription_id = $data[1];
 
         switch($type) {
             case 'stripe':
 
                 /* Initiate Stripe */
-                \Stripe\Stripe::setApiKey(settings()->stripe->secret_key);
+                \Stripe\Stripe::setApiKey($this->settings->stripe->secret_key);
 
                 /* Cancel the Stripe Subscription */
                 $subscription = \Stripe\Subscription::retrieve($subscription_id);
@@ -241,8 +295,8 @@ class User extends Model {
             case 'paypal':
 
                 /* Initiate paypal */
-                $paypal = new \PayPal\Rest\ApiContext(new \PayPal\Auth\OAuthTokenCredential(settings()->paypal->client_id, settings()->paypal->secret));
-                $paypal->setConfig(['mode' => settings()->paypal->mode]);
+                $paypal = new \PayPal\Rest\ApiContext(new \PayPal\Auth\OAuthTokenCredential($this->settings->paypal->client_id, $this->settings->paypal->secret));
+                $paypal->setConfig(['mode' => $this->settings->paypal->mode]);
 
                 /* Create an Agreement State Descriptor, explaining the reason to suspend. */
                 $agreement_state_descriptior = new \PayPal\Api\AgreementStateDescriptor();
@@ -258,8 +312,7 @@ class User extends Model {
                 break;
         }
 
-        /* Database query */
-        db()->where('user_id', $this->user->user_id)->update('users', ['payment_subscription_id' => '']);
+        Database::$database->query("UPDATE `users` SET `payment_subscription_id` = '' WHERE `user_id` = {$this->user->user_id}");
 
         /* Clear the cache */
         \Altum\Cache::$adapter->deleteItemsByTag('user_id=' . $user_id);

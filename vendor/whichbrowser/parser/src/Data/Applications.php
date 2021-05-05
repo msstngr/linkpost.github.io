@@ -26,6 +26,7 @@ class Applications
 
             foreach (self::$BROWSERS as $type => $list) {
                 foreach ($list as $i => $item) {
+
                     if (preg_match($item['regexp'], $ua, $match)) {
                         return [
                             'browser' => [
@@ -56,6 +57,7 @@ class Applications
 
             foreach (self::$OTHERS as $type => $list) {
                 foreach ($list as $i => $item) {
+
                     if (preg_match($item['regexp'], $ua, $match)) {
                         return [
                             'browser' => [

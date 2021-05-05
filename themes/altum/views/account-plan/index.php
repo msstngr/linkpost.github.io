@@ -8,21 +8,21 @@
 
 <section class="container pt-5">
 
-    <?= \Altum\Alerts::output_alerts() ?>
+    <?php display_notifications() ?>
 
     <div class="d-flex flex-column flex-md-row justify-content-between mb-5">
         <div>
-            <h2 class="h4"><?= language()->account_plan->header ?></h2>
+            <h2 class="h4"><?= $this->language->account_plan->header ?></h2>
         </div>
 
-        <?php if(settings()->payment->is_enabled): ?>
+        <?php if($this->settings->payment->is_enabled): ?>
             <div class="col-auto p-0">
                 <?php if($this->user->plan_id == 'free'): ?>
-                    <a href="<?= url('plan/upgrade') ?>" class="btn btn-primary rounded-pill"><i class="fa fa-fw fa-arrow-up"></i> <?= language()->account->plan->upgrade_plan ?></a>
+                    <a href="<?= url('plan/upgrade') ?>" class="btn btn-primary rounded-pill"><i class="fa fa-fw fa-arrow-up"></i> <?= $this->language->account->plan->upgrade_plan ?></a>
                 <?php elseif($this->user->plan_id == 'trial'): ?>
-                    <a href="<?= url('plan/renew') ?>" class="btn btn-primary rounded-pill"><i class="fa fa-fw fa-sync-alt"></i> <?= language()->account->plan->renew_plan ?></a>
+                    <a href="<?= url('plan/renew') ?>" class="btn btn-primary rounded-pill"><i class="fa fa-fw fa-sync-alt"></i> <?= $this->language->account->plan->renew_plan ?></a>
                 <?php else: ?>
-                    <a href="<?= url('plan/renew') ?>" class="btn btn-primary rounded-pill"><i class="fa fa-fw fa-sync-alt"></i> <?= language()->account->plan->renew_plan ?></a>
+                    <a href="<?= url('plan/renew') ?>" class="btn btn-primary rounded-pill"><i class="fa fa-fw fa-sync-alt"></i> <?= $this->language->account->plan->renew_plan ?></a>
                 <?php endif ?>
             </div>
         <?php endif ?>
@@ -35,7 +35,7 @@
             <?php if($this->user->plan_id != 'free' && (new \DateTime($this->user->plan_expiration_date)) < (new \DateTime())->modify('+5 years')): ?>
                 <p class="text-muted">
                     <?= sprintf(
-                        $this->user->payment_subscription_id ? language()->account_plan->plan->renews : language()->account_plan->plan->expires,
+                        $this->user->payment_subscription_id ? $this->language->account_plan->plan->renews : $this->language->account_plan->plan->expires,
                         '<strong>' . \Altum\Date::get($this->user->plan_expiration_date, 2) . '</strong>'
                     ) ?>
                 </p>
@@ -43,29 +43,29 @@
         </div>
 
         <div class="col">
-            <?= (new \Altum\Views\View('partials/plan_features'))->run(['plan_settings' => $this->user->plan_settings]) ?>
+            <?= (new \Altum\Views\View('partials/plan_features', ['settings' => $this->settings]))->run(['plan_settings' => $this->user->plan_settings]) ?>
         </div>
     </div>
 
     <?php if($this->user->plan_id != 'free' && $this->user->payment_subscription_id): ?>
         <div class="mt-8 d-flex justify-content-between">
             <div>
-                <h2 class="h4"><?= language()->account_plan->cancel->header ?></h2>
-                <p class="text-muted"><?= language()->account_plan->cancel->subheader ?></p>
+                <h2 class="h4"><?= $this->language->account_plan->cancel->header ?></h2>
+                <p class="text-muted"><?= $this->language->account_plan->cancel->subheader ?></p>
             </div>
 
             <div class="col-auto">
-                <a href="<?= url('account/cancelsubscription' . \Altum\Middlewares\Csrf::get_url_query()) ?>" class="btn btn-secondary" data-confirm="<?= language()->account_plan->cancel->confirm_message ?>"><?= language()->account_plan->cancel->cancel ?></a>
+                <a href="<?= url('account/cancelsubscription' . \Altum\Middlewares\Csrf::get_url_query()) ?>" class="btn btn-secondary" data-confirm="<?= $this->language->account_plan->cancel->confirm_message ?>"><?= $this->language->account_plan->cancel->cancel ?></a>
             </div>
         </div>
     <?php endif ?>
 
-    <?php if(settings()->payment->is_enabled && settings()->payment->codes_is_enabled): ?>
+    <?php if($this->settings->payment->is_enabled && $this->settings->payment->codes_is_enabled): ?>
         <div class="row mt-8">
             <div class="col-12 col-md-4">
-                <h2 class="h4"><?= language()->account_plan->code->header ?></h2>
+                <h2 class="h4"><?= $this->language->account_plan->code->header ?></h2>
 
-                <p class="text-muted"><?= language()->account_plan->code->subheader ?></p>
+                <p class="text-muted"><?= $this->language->account_plan->code->subheader ?></p>
             </div>
 
             <div class="col">
@@ -73,12 +73,12 @@
                     <input type="hidden" name="token" value="<?= \Altum\Middlewares\Csrf::get() ?>" />
 
                     <div class="form-group">
-                        <label><i class="fa fa-fw fa-sm fa-tags text-muted mr-1"></i> <?= language()->account_plan->code->input ?></label>
+                        <label><i class="fa fa-fw fa-sm fa-tags text-muted mr-1"></i> <?= $this->language->account_plan->code->input ?></label>
                         <input type="text" name="code" class="form-control" />
                         <div class="mt-2"><span id="code_help" class="text-muted"></span></div>
                     </div>
 
-                    <button id="code_submit" type="submit" name="submit" class="btn btn-primary d-none"><?= language()->account_plan->code->submit ?></button>
+                    <button id="code_submit" type="submit" name="submit" class="btn btn-primary d-none"><?= $this->language->account_plan->code->submit ?></button>
                 </form>
             </div>
         </div>
@@ -105,19 +105,11 @@
                     return;
                 }
 
-                fetch(`${url}account-plan/code`, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        code, global_token
-                    }),
-                    headers: {
-                        'Content-Type': 'application/json; charset=UTF-8'
-                    }
-                })
-                    .then(response => {
-                        return response.ok ? response.json() : Promise.reject(response);
-                    })
-                    .then(data => {
+                $.ajax({
+                    type: 'POST',
+                    url: `${url}account-plan/code`,
+                    data: {code, global_token},
+                    success: data => {
 
                         if(data.status == 'success') {
                             is_valid = true;
@@ -135,11 +127,9 @@
                             document.querySelector('#code_submit').classList.add('d-none');
                         }
 
-                    })
-                    .catch(error => {
-                        /* :) */
-                    });
-
+                    },
+                    dataType: 'json'
+                });
             };
 
             /* Writing hanlder on the input */

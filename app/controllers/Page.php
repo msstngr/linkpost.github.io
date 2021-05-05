@@ -9,10 +9,10 @@ class Page extends Controller {
 
     public function index() {
 
-        $url = isset($this->params[0]) ? Database::clean_string($this->params[0]) : null;
+        $url = isset($this->params[0]) ? Database::clean_string($this->params[0]) : false;
 
         /* If the custom page url is set then try to get data from the database */
-        $page = $url ? database()->query("
+        $page = $url ? $this->database->query("
             SELECT
                 `pages`.*,
                 `pages_categories`.`url` AS `pages_category_url`,
@@ -21,7 +21,7 @@ class Page extends Controller {
             LEFT JOIN `pages_categories` ON `pages_categories`.`pages_category_id` = `pages`.`pages_category_id`
             WHERE
                 `pages`.`url` = '{$url}' 
-        ")->fetch_object() ?? null : null;
+        ")->fetch_object() ?? false : false;
 
         /* Redirect if the page does not exist */
         if(!$page) {
@@ -33,7 +33,7 @@ class Page extends Controller {
         \Altum\Event::add_content($view->run(), 'modals');
 
         /* Add a new view to the page */
-        db()->where('page_id', $page->page_id)->update('pages', ['total_views' => db()->inc()]);
+        $this->database->query("UPDATE `pages` SET `total_views` = `total_views`+1 WHERE `page_id` = {$page->page_id}");
 
         /* Prepare the View */
         $data = [

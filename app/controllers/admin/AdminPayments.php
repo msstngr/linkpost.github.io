@@ -2,24 +2,30 @@
 
 namespace Altum\Controllers;
 
-use Altum\Alerts;
+use Altum\Database\Database;
 use Altum\Date;
+use Altum\Logger;
 use Altum\Middlewares\Csrf;
+use Altum\Middlewares\Authentication;
+use Altum\Models\Plan;
+use Altum\Response;
 
 class AdminPayments extends Controller {
 
     public function index() {
 
+        Authentication::guard('admin');
+
         /* Prepare the filtering system */
         $filters = (new \Altum\Filters(['status', 'plan_id', 'user_id', 'type', 'processor', 'frequency'], ['name', 'email'], ['total_amount', 'email', 'date', 'name']));
 
         /* Prepare the paginator */
-        $total_rows = database()->query("SELECT COUNT(*) AS `total` FROM `payments` WHERE 1 = 1 {$filters->get_sql_where()}")->fetch_object()->total ?? 0;
+        $total_rows = Database::$database->query("SELECT COUNT(*) AS `total` FROM `payments` WHERE 1 = 1 {$filters->get_sql_where()}")->fetch_object()->total ?? 0;
         $paginator = (new \Altum\Paginator($total_rows, $filters->get_results_per_page(), $_GET['page'] ?? 1, url('admin/payments?' . $filters->get_get() . '&page=%d')));
 
-        /* Get the data */
+        /* Get the users */
         $payments = [];
-        $payments_result = database()->query("
+        $payments_result = Database::$database->query("
             SELECT
                 `payments`.*, `users`.`name` AS `user_name`, `users`.`email` AS `user_email`
             FROM
@@ -43,7 +49,7 @@ class AdminPayments extends Controller {
 
         /* Requested plan details */
         $plans = [];
-        $plans_result = database()->query("SELECT `plan_id`, `name` FROM `plans`");
+        $plans_result = Database::$database->query("SELECT `plan_id`, `name` FROM `plans`");
         while($row = $plans_result->fetch_object()) {
             $plans[$row->plan_id] = $row;
         }
@@ -76,16 +82,17 @@ class AdminPayments extends Controller {
 
     public function delete() {
 
-        $payment_id = isset($this->params[0]) ? (int) $this->params[0] : null;
+        Authentication::guard();
+
+        $payment_id = (isset($this->params[0])) ? $this->params[0] : false;
 
         if(!Csrf::check('global_token')) {
-            Alerts::add_error(language()->global->error_message->invalid_csrf_token);
+            $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
             redirect('admin/users');
         }
 
-        if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
-
-            $payment = db()->where('id', $payment_id)->getOne('payments', ['payment_proof']);
+        if(empty($_SESSION['error'])) {
+            $payment = Database::get(['payment_proof'], 'payments', ['id' => $payment_id]);
 
             /* Delete the saved proof, if any */
             if($payment->payment_proof) {
@@ -93,10 +100,10 @@ class AdminPayments extends Controller {
             }
 
             /* Delete the payment */
-            db()->where('id', $payment_id)->delete('payments');
+            Database::$database->query("DELETE FROM `payments` WHERE `id` = {$payment_id}");
 
-            /* Set a nice success message */
-            Alerts::add_success(language()->admin_payment_delete_modal->success_message);
+            /* Success message */
+            $_SESSION['success'][] = $this->language->admin_payment_delete_modal->success_message;
 
         }
 
@@ -105,40 +112,36 @@ class AdminPayments extends Controller {
 
     public function approve() {
 
-        $payment_id = (isset($this->params[0])) ? (int) $this->params[0] : null;
+        Authentication::guard();
+
+        $payment_id = (isset($this->params[0])) ? $this->params[0] : false;
 
         if(!Csrf::check('global_token')) {
-            Alerts::add_error(language()->global->error_message->invalid_csrf_token);
+            $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
             redirect('admin/users');
         }
 
-        if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
-
-            /* details about the payment */
-            $payment = db()->where('id', $payment_id)->getOne('payments', ['plan_id', 'user_id', 'frequency', 'email', 'code', 'payment_proof', 'payer_id', 'total_amount']);
-
-            /* details about the user who paid */
-            $user = db()->where('user_id', $payment->user_id)->getOne('users', ['user_id']);
-
-            /* plan that the user has paid for */
-            $plan = (new \Altum\Models\Plan())->get_plan_by_id($payment->plan_id);
+        if(empty($_SESSION['error'])) {
+            $payment = Database::get(['plan_id', 'user_id', 'frequency', 'email', 'code', 'payment_proof', 'payer_id'], 'payments', ['id' => $payment_id]);
+            $plan = (new \Altum\Models\Plan(['settings' => $this->settings]))->get_plan_by_id($payment->plan_id);
 
             /* Make sure the code that was potentially used exists */
-            $codes_code = db()->where('code', $payment->code)->where('type', 'discount')->getOne('codes');
+            $codes_code = Database::get('*', 'codes', ['code' => $payment->code, 'type' => 'discount']);
 
             if($codes_code) {
                 /* Check if we should insert the usage of the code or not */
-                if(!db()->where('user_id', $payment->user_id)->where('code_id', $codes_code->code_id)->has('redeemed_codes')) {
-
+                if(!Database::exists('id', 'redeemed_codes', ['user_id' => $payment->user_id, 'code_id' => $codes_code->code_id])) {
                     /* Update the code usage */
-                    db()->where('code_id', $codes_code->code_id)->update('codes', ['redeemed' => db()->inc()]);
+                    $this->database->query("UPDATE `codes` SET `redeemed` = `redeemed` + 1 WHERE `code_id` = {$codes_code->code_id}");
 
                     /* Add log for the redeemed code */
-                    db()->insert('redeemed_codes', [
+                    Database::insert('redeemed_codes', [
                         'code_id'   => $codes_code->code_id,
-                        'user_id'   => $user->user_id,
+                        'user_id'   => $payment->user_id,
                         'date'      => \Altum\Date::$date
                     ]);
+
+                    Logger::users($payment->user_id, 'codes.redeemed_code=' . $codes_code->code);
                 }
             }
 
@@ -157,40 +160,46 @@ class AdminPayments extends Controller {
                     break;
             }
 
-            /* Database query */
-            db()->where('user_id', $user->user_id)->update('users', [
-                'plan_id' => $payment->plan_id,
-                'plan_settings' => json_encode($plan->settings),
-                'plan_expiration_date' => $plan_expiration_date
-            ]);
+            Database::update(
+                'users',
+                [
+                    'plan_id' => $payment->plan_id,
+                    'plan_settings' => json_encode($plan->settings),
+                    'plan_expiration_date' => $plan_expiration_date
+                ],
+                [
+                    'user_id' => $payment->payer_id
+                ]
+            );
 
             /* Clear the cache */
-            \Altum\Cache::$adapter->deleteItemsByTag('user_id=' . $user->user_id);
+            \Altum\Cache::$adapter->deleteItemsByTag('user_id=' . $payment->payer_id);
 
             /* Send notification to the user */
             /* Prepare the email */
             $email_template = get_email_template(
                 [],
-                language()->global->emails->user_payment->subject,
+                $this->language->global->emails->user_payment->subject,
                 [
                     '{{PLAN_EXPIRATION_DATE}}' => Date::get($plan_expiration_date, 2),
                     '{{USER_PLAN_LINK}}' => url('account-plan'),
                     '{{USER_PAYMENTS_LINK}}' => url('account-payments'),
                 ],
-                language()->global->emails->user_payment->body
+                $this->language->global->emails->user_payment->body
             );
 
             send_mail(
+                $this->settings,
                 $payment->email,
                 $email_template->subject,
                 $email_template->body
             );
 
             /* Update the payment */
-            db()->where('id', $payment_id)->update('payments', ['status' => 1]);
+            Database::$database->query("UPDATE `payments` SET `status` = 1 WHERE `id` = {$payment_id}");
 
-            /* Set a nice success message */
-            Alerts::add_success(language()->admin_payment_approve_modal->success_message);
+            /* Success message */
+            $_SESSION['success'][] = $this->language->admin_payment_approve_modal->success_message;
 
         }
 

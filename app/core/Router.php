@@ -6,7 +6,6 @@ use Altum\Database\Database;
 
 class Router {
     public static $params = [];
-    public static $original_request = '';
     public static $path = '';
     public static $controller_key = 'index';
     public static $controller = 'Index';
@@ -17,19 +16,15 @@ class Router {
         'no_authentication_check' => false,
 
         /* Should we see a view for the controller? */
-        'has_view' => true,
+        'has_view'              => true,
 
         /* If set on yes, ads wont show on these pages at all */
-        'no_ads' => false,
-
-        /* Authentication guard check (potential values: null, 'guest', 'user', 'admin') */
-        'authentication' => null
+        'no_ads'                => false
     ];
     public static $method = 'index';
-    public static $data = [];
 
     public static $routes = [
-        'l' => [
+        'link' => [
             'link' => [
                 'controller' => 'Link',
                 'settings' => [
@@ -68,10 +63,6 @@ class Router {
 
             'page' => [
                 'controller' => 'Page'
-            ],
-
-            'api-documentation' => [
-                'controller' => 'ApiDocumentation',
             ],
 
             'activate-user' => [
@@ -178,14 +169,6 @@ class Router {
                 ]
             ],
 
-            'account-api' => [
-                'controller' => 'AccountApi',
-                'settings' => [
-                    'body_white' => false,
-                    'no_ads'    => true
-                ]
-            ],
-
             'account-delete' => [
                 'controller' => 'AccountDelete',
                 'settings' => [
@@ -252,6 +235,13 @@ class Router {
             ],
 
             /* Others */
+            'get-captcha' => [
+                'controller' => 'GetCaptcha',
+                'settings' => [
+                    'no_authentication_check' => true
+                ]
+            ],
+
             'sitemap' => [
                 'controller' => 'Sitemap',
                 'settings' => [
@@ -261,58 +251,6 @@ class Router {
 
             'cron' => [
                 'controller' => 'Cron',
-                'settings' => [
-                    'no_authentication_check' => true,
-                    'has_view' => false
-                ]
-            ],
-        ],
-
-        'api' => [
-            'links' => [
-                'controller' => 'ApiLinks',
-                'settings' => [
-                    'no_authentication_check' => true,
-                    'has_view' => false
-                ]
-            ],
-            'statistics' => [
-                'controller' => 'ApiStatistics',
-                'settings' => [
-                    'no_authentication_check' => true,
-                    'has_view' => false
-                ]
-            ],
-            'projects' => [
-                'controller' => 'ApiProjects',
-                'settings' => [
-                    'no_authentication_check' => true,
-                    'has_view' => false
-                ]
-            ],
-            'domains' => [
-                'controller' => 'ApiDomains',
-                'settings' => [
-                    'no_authentication_check' => true,
-                    'has_view' => false
-                ]
-            ],
-            'user' => [
-                'controller' => 'ApiUser',
-                'settings' => [
-                    'no_authentication_check' => true,
-                    'has_view' => false
-                ]
-            ],
-            'payments' => [
-                'controller' => 'ApiPayments',
-                'settings' => [
-                    'no_authentication_check' => true,
-                    'has_view' => false
-                ]
-            ],
-            'logs' => [
-                'controller' => 'ApiLogs',
                 'settings' => [
                     'no_authentication_check' => true,
                     'has_view' => false
@@ -344,10 +282,6 @@ class Router {
 
             'links' => [
                 'controller' => 'AdminLinks'
-            ],
-
-            'projects' => [
-                'controller' => 'AdminProjects'
             ],
 
             'domains' => [
@@ -457,6 +391,7 @@ class Router {
     ];
 
 
+
     public static function parse_url() {
 
         $params = self::$params;
@@ -478,32 +413,10 @@ class Router {
 
     public static function parse_controller() {
 
-        self::$original_request = implode('/', self::$params);
-
-        /* Check if the current link accessed is actually the original url or not (multi domain use) */
-        $original_url_host = parse_url(url())['host'];
-        $request_url_host = Database::clean_string($_SERVER['HTTP_HOST']);
-
-        if($original_url_host != $request_url_host) {
-
-            /* Make sure the custom domain is attached */
-            $domain = (new \Altum\Models\Domain())->get_domain_by_host($request_url_host);;
-
-            if($domain && $domain->is_enabled) {
-                self::$controller_key = 'link';
-                self::$controller = 'Link';
-                self::$path = 'l';
-
-                /* Set some route data */
-                self::$data['domain'] = $domain;
-            }
-
-        }
-
         /* Check for potential other paths than the default one (admin panel) */
         if(!empty(self::$params[0])) {
 
-            if(in_array(self::$params[0], ['admin', 'admin-api', 'l', 'api'])) {
+            if(in_array(self::$params[0], ['admin', 'admin-api'])) {
                 self::$path = self::$params[0];
 
                 unset(self::$params[0]);
@@ -524,56 +437,36 @@ class Router {
             } else {
 
                 /* Try to check if the link exists via the cache */
-                $cache_instance = \Altum\Cache::$adapter->getItem('link?url=' . self::$params[0] . (isset(self::$data['domain']) ? '&domain_id=' . self::$data['domain']->domain_id : null));
+                $cache_instance = \Altum\Cache::$adapter->getItem('available_links_' . self::$params[0]);
 
                 /* Set cache if not existing */
                 if(!$cache_instance->get()) {
 
                     /* Get data from the database */
-                    if(isset(self::$data['domain'])) {
-                        $link = db()->where('url', self::$params[0])->where('domain_id', self::$data['domain']->domain_id)->getOne('links');
-                    } else {
-                        $link = db()->where('url', self::$params[0])->where('domain_id', 0)->getOne('links');
-                    }
+                    $link_url = Database::simple_get('url', 'links', ['url' => self::$params[0]]);
 
-                    if($link) {
-                        \Altum\Cache::$adapter->save($cache_instance->set($link)->expiresAfter(86400)->addTag('link_id=' . $link->link_id));
-
-                        /* Set some route data */
-                        self::$data['link'] = $link;
-                    }
+                    \Altum\Cache::$adapter->save($cache_instance->set($link_url)->expiresAfter(86400));
 
                 } else {
 
                     /* Get cache */
-                    $link = $cache_instance->get();
-
-                    /* Set some route data */
-                    self::$data['link'] = $link;
+                    $link_url = $cache_instance->get();
 
                 }
 
-
                 /* Check if there is any link available in the database */
-                if($link) {
+                if($link_url) {
+                    self::$params[0] = Database::clean_string(self::$params[0]);
 
                     self::$controller_key = 'link';
                     self::$controller = 'Link';
-                    self::$path = 'l';
+                    self::$path = 'link';
 
                 } else {
 
-                    /* Check for a custom domain 404 redirect */
-                    if(isset(self::$data['domain']) && self::$data['domain']->custom_not_found_url) {
-                        header('Location: ' . self::$data['domain']->custom_not_found_url);
-                        die();
-                    }
-
-                    else {
-                        /* Not found controller */
-                        self::$path = '';
-                        self::$controller_key = 'notfound';
-                    }
+                    /* Not found controller */
+                    self::$path = '';
+                    self::$controller_key = 'notfound';
 
                 }
 
@@ -581,19 +474,8 @@ class Router {
 
         }
 
-        /* Check for a custom index url redirect in case there is no link requested  */
-        if(!isset(self::$params[0]) && !isset(self::$params[1]) && self::$path == 'l' && $original_url_host != $request_url_host && isset(self::$data['domain']) && self::$data['domain']->custom_index_url) {
-            header('Location: ' . self::$data['domain']->custom_index_url);
-            die();
-        }
-
         /* Save the current controller */
         self::$controller = self::$routes[self::$path][self::$controller_key]['controller'];
-
-        /* Admin path authentication force check */
-        if(self::$path == 'admin' && !isset(self::$routes[self::$path][self::$controller_key]['settings'])) {
-            self::$routes[self::$path][self::$controller_key]['settings'] = ['authentication' => 'admin'];
-        }
 
         /* Make sure we also save the controller specific settings */
         if(isset(self::$routes[self::$path][self::$controller_key]['settings'])) {

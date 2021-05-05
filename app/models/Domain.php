@@ -2,6 +2,8 @@
 
 namespace Altum\Models;
 
+use Altum\Database\Database;
+
 class Domain extends Model {
 
     public function get_domains($user) {
@@ -14,7 +16,7 @@ class Domain extends Model {
 
         $where .= " AND `is_enabled` = 1";
 
-        $result = database()->query("SELECT * FROM `domains` WHERE {$where}");
+        $result = Database::$database->query("SELECT * FROM `domains` WHERE {$where}");
         $data = [];
 
         while($row = $result->fetch_object()) {
@@ -30,88 +32,18 @@ class Domain extends Model {
 
     public function get_domain($domain_id) {
 
-        /* Get the domain */
-        $domain = null;
+        $domain_id = (int) Database::clean_string($domain_id);
 
-        /* Try to check if the domain posts exists via the cache */
-        $cache_instance = \Altum\Cache::$adapter->getItem('domain?domain_id=' . md5($domain_id));
+        $result = Database::$database->query("SELECT * FROM `domains` WHERE `domain_id` = {$domain_id}");
 
-        /* Set cache if not existing */
-        if(is_null($cache_instance->get())) {
+        if(!$result->num_rows) return false;
 
-            /* Get data from the database */
-            $domain = db()->where('domain_id', $domain_id)->getOne('domains');
+        $row = $result->fetch_object();
 
-            if($domain) {
-                /* Build the url */
-                $domain->url = $domain->scheme . $domain->host . '/';
+        /* Build the url */
+        $row->url = $row->scheme . $row->host . '/';
 
-                \Altum\Cache::$adapter->save(
-                    $cache_instance->set($domain)->expiresAfter(86400)->addTag('domain_id=' . $domain->domain_id)
-                );
-            }
-
-        } else {
-
-            /* Get cache */
-            $domain = $cache_instance->get();
-
-        }
-
-        return $domain;
-
+        return $row;
     }
 
-    public function get_domain_by_host($host) {
-
-        /* Get the domain */
-        $domain = null;
-
-        /* Try to check if the domain posts exists via the cache */
-        $cache_instance = \Altum\Cache::$adapter->getItem('domain?host=' . md5($host));
-
-        /* Set cache if not existing */
-        if(is_null($cache_instance->get())) {
-
-            /* Get data from the database */
-            $domain = db()->where('host', $host)->getOne('domains');
-
-            if($domain) {
-                /* Build the url */
-                $domain->url = $domain->scheme . $domain->host . '/';
-
-                \Altum\Cache::$adapter->save(
-                    $cache_instance->set($domain)->expiresAfter(86400)->addTag('domain_id=' . $domain->domain_id)
-                );
-            }
-
-        } else {
-
-            /* Get cache */
-            $domain = $cache_instance->get();
-
-        }
-
-        return $domain;
-
-    }
-
-    public function delete($domain_id) {
-
-        /* Delete everything related to the domain that the user owns */
-        $result = database()->query("SELECT `link_id` FROM `links` WHERE `domain_id` = {$domain_id} AND `type` = 'biolink' AND `subtype` = 'base'");
-
-        while($link = $result->fetch_object()) {
-
-            (new \Altum\Models\Link())->delete($link->link_id);
-
-        }
-
-        /* Delete the domain */
-        db()->where('domain_id', $domain_id)->delete('domains');
-
-        /* Clear the cache */
-        \Altum\Cache::$adapter->deleteItemsByTag('domain_id=' . $domain_id);
-
-    }
 }

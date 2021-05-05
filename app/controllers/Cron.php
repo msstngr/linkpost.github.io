@@ -10,7 +10,7 @@ class Cron extends Controller {
         set_time_limit(0);
 
         /* Make sure the key is correct */
-        if(!isset($_GET['key']) || (isset($_GET['key']) && $_GET['key'] != settings()->cron->key)) {
+        if(!isset($_GET['key']) || (isset($_GET['key']) && $_GET['key'] != $this->settings->cron->key)) {
             die();
         }
 

@@ -4,41 +4,41 @@
 
 <div class="container">
 
-    <?= \Altum\Alerts::output_alerts() ?>
+    <?php display_notifications() ?>
 
     <div class="d-flex flex-column align-items-center justify-content-center">
-        <img src="<?= SITE_URL . ASSETS_URL_PATH . 'images/thank_you.svg' ?>" class="col-10 col-md-6 col-lg-4 mb-4" alt="<?= language()->pay_thank_you->header ?>" />
+        <img src="<?= SITE_URL . ASSETS_URL_PATH . 'images/thank_you.svg' ?>" class="col-10 col-md-6 col-lg-4 mb-4" alt="<?= $this->language->pay_thank_you->header ?>" />
 
-        <h1><?= language()->pay_thank_you->header ?></h1>
+        <h1><?= $this->language->pay_thank_you->header ?></h1>
 
         <?php if($data->plan_id == 'trial'): ?>
 
-            <p class="text-muted"><?= language()->pay_thank_you->plan_trial_start ?></p>
+            <p class="text-muted"><?= $this->language->pay_thank_you->plan_trial_start ?></p>
 
         <?php elseif(is_numeric($data->plan_id)): ?>
 
             <?php if($_GET['payment_processor'] == 'stripe'): ?>
 
-                <p class="text-muted"><?= language()->pay_thank_you->plan_custom_will_start ?></p>
+                <p class="text-muted"><?= $this->language->pay_thank_you->plan_custom_will_start ?></p>
 
             <?php elseif($_GET['payment_processor'] == 'paypal'): ?>
 
                 <?php if($_GET['payment_type'] == 'one_time'): ?>
-                    <p class="text-muted"><?= language()->pay_thank_you->plan_custom_start ?></p>
+                    <p class="text-muted"><?= $this->language->pay_thank_you->plan_custom_start ?></p>
 
                 <?php elseif($_GET['payment_type'] == 'recurring'): ?>
-                    <p class="text-muted"><?= language()->pay_thank_you->plan_custom_will_start ?></p>
+                    <p class="text-muted"><?= $this->language->pay_thank_you->plan_custom_will_start ?></p>
                 <?php endif ?>
 
             <?php elseif($_GET['payment_processor'] == 'offline_payment'): ?>
 
-                <p class="text-muted"><?= language()->pay_thank_you->plan_custom_pending ?></p>
+                <p class="text-muted"><?= $this->language->pay_thank_you->plan_custom_pending ?></p>
 
             <?php endif ?>
 
         <?php endif ?>
 
-        <a href="<?= url('dashboard') ?>" class="btn btn-outline-primary mt-4"><?= language()->pay_thank_you->button ?></a>
+        <a href="<?= url('dashboard') ?>" class="btn btn-outline-primary mt-4"><?= $this->language->pay_thank_you->button ?></a>
 
     </div>
 

@@ -3,7 +3,7 @@
 <?php ob_start() ?>
 <div class="card mb-5">
     <div class="card-body">
-        <h2 class="h4"><i class="fa fa-fw fa-users fa-xs text-muted"></i> <?= language()->admin_statistics->growth->users->header ?></h2>
+        <h2 class="h4"><i class="fa fa-fw fa-users fa-xs text-muted"></i> <?= $this->language->admin_statistics->growth->users->header ?></h2>
 
         <div class="chart-container">
             <canvas id="users"></canvas>
@@ -13,7 +13,7 @@
 
 <div class="card mb-5">
     <div class="card-body">
-        <h2 class="h4"><i class="fa fa-fw fa-server fa-xs text-muted"></i> <?= language()->admin_statistics->growth->projects->header ?></h2>
+        <h2 class="h4"><i class="fa fa-fw fa-server fa-xs text-muted"></i> <?= $this->language->admin_statistics->growth->projects->header ?></h2>
 
         <div class="chart-container">
             <canvas id="projects"></canvas>
@@ -23,7 +23,7 @@
 
 <div class="card mb-5">
     <div class="card-body">
-        <h2 class="h4"><i class="fa fa-fw fa-user-shield fa-xs text-muted"></i> <?= language()->admin_statistics->growth->links->header ?></h2>
+        <h2 class="h4"><i class="fa fa-fw fa-user-shield fa-xs text-muted"></i> <?= $this->language->admin_statistics->growth->links->header ?></h2>
 
         <div class="chart-container">
             <canvas id="links"></canvas>
@@ -33,7 +33,7 @@
 
 <div class="card mb-5">
     <div class="card-body">
-        <h2 class="h4"><i class="fa fa-fw fa-user-friends fa-xs text-muted"></i> <?= language()->admin_statistics->growth->users_logs->header ?></h2>
+        <h2 class="h4"><i class="fa fa-fw fa-user-friends fa-xs text-muted"></i> <?= $this->language->admin_statistics->growth->users_logs->header ?></h2>
 
         <div class="chart-container">
             <canvas id="users_logs"></canvas>
@@ -41,10 +41,10 @@
     </div>
 </div>
 
-<?php if(in_array(settings()->license->type, ['SPECIAL', 'Extended License'])): ?>
+<?php if(in_array($this->settings->license->type, ['SPECIAL', 'Extended License'])): ?>
 <div class="card mb-5">
     <div class="card-body">
-        <h2 class="h4"><i class="fa fa-fw fa-tags fa-xs text-muted"></i> <?= language()->admin_statistics->growth->redeemed_codes->header ?></h2>
+        <h2 class="h4"><i class="fa fa-fw fa-tags fa-xs text-muted"></i> <?= $this->language->admin_statistics->growth->redeemed_codes->header ?></h2>
 
         <div class="chart-container">
             <canvas id="redeemed_codes"></canvas>
@@ -74,7 +74,7 @@
             labels: <?= $data->users_chart['labels'] ?>,
             datasets: [
                 {
-                    label: <?= json_encode(language()->admin_statistics->growth->users->chart) ?>,
+                    label: <?= json_encode($this->language->admin_statistics->growth->users->chart) ?>,
                     data: <?= $data->users_chart['users'] ?? '[]' ?>,
                     backgroundColor: color_gradient,
                     borderColor: color,
@@ -97,7 +97,7 @@
             labels: <?= $data->projects_chart['labels'] ?>,
             datasets: [
                 {
-                    label: <?= json_encode(language()->admin_statistics->growth->projects->chart) ?>,
+                    label: <?= json_encode($this->language->admin_statistics->growth->projects->chart) ?>,
                     data: <?= $data->projects_chart['projects'] ?? '[]' ?>,
                     backgroundColor: color_gradient,
                     borderColor: color,
@@ -120,7 +120,7 @@
             labels: <?= $data->links_chart['labels'] ?>,
             datasets: [
                 {
-                    label: <?= json_encode(language()->admin_statistics->growth->links->chart) ?>,
+                    label: <?= json_encode($this->language->admin_statistics->growth->links->chart) ?>,
                     data: <?= $data->links_chart['links'] ?? '[]' ?>,
                     backgroundColor: color_gradient,
                     borderColor: color,
@@ -143,7 +143,7 @@
             labels: <?= $data->users_logs_chart['labels'] ?>,
             datasets: [
                 {
-                    label: <?= json_encode(language()->admin_statistics->growth->users_logs->chart) ?>,
+                    label: <?= json_encode($this->language->admin_statistics->growth->users_logs->chart) ?>,
                     data: <?= $data->users_logs_chart['users_logs'] ?? '[]' ?>,
                     backgroundColor: color_gradient,
                     borderColor: color,
@@ -155,7 +155,7 @@
     });
 
 
-    <?php if(in_array(settings()->license->type, ['SPECIAL', 'Extended License'])): ?>
+    <?php if(in_array($this->settings->license->type, ['SPECIAL', 'Extended License'])): ?>
     let redeemed_codes_chart = document.getElementById('redeemed_codes').getContext('2d');
     color_gradient = redeemed_codes_chart.createLinearGradient(0, 0, 0, 250);
     color_gradient.addColorStop(0, 'rgba(63, 136, 253, .1)');
@@ -167,7 +167,7 @@
             labels: <?= $data->redeemed_codes_chart['labels'] ?>,
             datasets: [
                 {
-                    label: <?= json_encode(language()->admin_statistics->growth->redeemed_codes->chart) ?>,
+                    label: <?= json_encode($this->language->admin_statistics->growth->redeemed_codes->chart) ?>,
                     data: <?= $data->redeemed_codes_chart['redeemed_codes'] ?? '[]' ?>,
                     backgroundColor: color_gradient,
                     borderColor: color,

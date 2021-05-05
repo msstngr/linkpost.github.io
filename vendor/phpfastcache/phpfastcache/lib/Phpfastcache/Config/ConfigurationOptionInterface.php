@@ -1,5 +1,4 @@
 <?php
-
 /**
  *
  * This file is part of phpFastCache.
@@ -13,7 +12,6 @@
  *
  */
 declare(strict_types=1);
-
 namespace Phpfastcache\Config;
 
 
@@ -24,6 +22,13 @@ interface ConfigurationOptionInterface
      * ArrayObject constructor.
      */
     public function __construct(...$args);
+
+    /**
+     * @param string $optionName
+     * @return mixed|null
+     * @deprecated Use ->getOptionName() instead
+     */
+    public function getOption(string $optionName);
 
     /**
      * @param string $optionName

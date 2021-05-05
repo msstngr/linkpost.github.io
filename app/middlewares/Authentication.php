@@ -2,6 +2,7 @@
 
 namespace Altum\Middlewares;
 
+use Altum\Database\Database;
 use Altum\Models\User;
 
 class Authentication extends Middleware {
@@ -99,15 +100,15 @@ class Authentication extends Middleware {
     public static function logout($page = '') {
 
         if(self::check()) {
-            db()->where('user_id', self::$user_id)->update('users', ['token_code' => '']);
+            Database::update('users', ['token_code' => ''], ['user_id' => self::$user_id]);
 
             /* Clear the cache */
             \Altum\Cache::$adapter->deleteItemsByTag('user_id=' . self::$user_id);
         }
 
         session_destroy();
-        setcookie('email', '', time()-30, COOKIE_PATH);
-        setcookie('token_code', '', time()-30, COOKIE_PATH);
+        setcookie('email', '', time()-30);
+        setcookie('token_code', '', time()-30);
 
         if($page !== false) {
             redirect($page);

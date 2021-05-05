@@ -3,8 +3,8 @@
 <?php ob_start() ?>
 <div class="card mb-5">
     <div class="card-body">
-        <h2 class="h4"><i class="fa fa-fw fa-link fa-xs text-muted"></i> <?= language()->admin_statistics->links->track_links->header ?></h2>
-        <p class="text-muted"><?= language()->admin_statistics->links->track_links->subheader ?></p>
+        <h2 class="h4"><i class="fa fa-fw fa-link fa-xs text-muted"></i> <?= $this->language->admin_statistics->links->track_links->header ?></h2>
+        <p class="text-muted"><?= $this->language->admin_statistics->links->track_links->subheader ?></p>
 
         <div class="chart-container">
             <canvas id="track_links"></canvas>
@@ -30,7 +30,7 @@
         data: {
             labels: <?= $data->track_links_chart['labels'] ?>,
             datasets: [{
-                label: <?= json_encode(language()->admin_statistics->links->track_links->chart_track_links) ?>,
+                label: <?= json_encode($this->language->admin_statistics->links->track_links->chart_track_links) ?>,
                 data: <?= $data->track_links_chart['track_links'] ?? '[]' ?>,
                 backgroundColor: color_gradient,
                 borderColor: color,

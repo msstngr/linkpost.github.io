@@ -2,13 +2,15 @@
 
 namespace Altum\Controllers;
 
-use Altum\Alerts;
 use Altum\Database\Database;
+use Altum\Middlewares\Authentication;
 use Altum\Middlewares\Csrf;
 
 class AdminSettings extends Controller {
 
     public function index() {
+
+        Authentication::guard('admin');
 
         if(!empty($_POST)) {
             /* Define some variables */
@@ -18,8 +20,8 @@ class AdminSettings extends Controller {
             $_POST['title'] = filter_var($_POST['title'], FILTER_SANITIZE_STRING);
             $_POST['default_timezone'] = filter_var($_POST['default_timezone'], FILTER_SANITIZE_STRING);
             $_POST['default_theme_style'] = filter_var($_POST['default_theme_style'], FILTER_SANITIZE_STRING);
-            $logo = !empty($_FILES['logo']['name']) && !isset($_POST['logo_remove']);
-            $favicon = !empty($_FILES['favicon']['name']) && !isset($_POST['favicon_remove']);
+            $logo = (!empty($_FILES['logo']['name']));
+            $favicon = (!empty($_FILES['favicon']['name']));
             $_POST['email_confirmation'] = (bool) $_POST['email_confirmation'];
             $_POST['register_is_enabled'] = (bool) $_POST['register_is_enabled'];
             $_POST['terms_and_conditions_url'] = filter_var($_POST['terms_and_conditions_url'], FILTER_SANITIZE_STRING);
@@ -34,10 +36,6 @@ class AdminSettings extends Controller {
             $_POST['links_blacklisted_keywords'] = implode(',', array_map('trim', explode(',', $_POST['links_blacklisted_keywords'])));
             $_POST['links_phishtank_is_enabled'] = (bool) $_POST['links_phishtank_is_enabled'];
             $_POST['links_google_safe_browsing_is_enabled'] = (bool) $_POST['links_google_safe_browsing_is_enabled'];
-            $_POST['links_avatar_size_limit'] = $_POST['links_avatar_size_limit'] > get_max_upload() || $_POST['links_avatar_size_limit'] < 0 ? get_max_upload() : (float) $_POST['links_avatar_size_limit'];
-            $_POST['links_background_size_limit'] = $_POST['links_background_size_limit'] > get_max_upload() || $_POST['links_background_size_limit'] < 0 ? get_max_upload() : (float) $_POST['links_background_size_limit'];
-            $_POST['links_thumbnail_image_size_limit'] = $_POST['links_thumbnail_image_size_limit'] > get_max_upload() || $_POST['links_thumbnail_image_size_limit'] < 0 ? get_max_upload() : (float) $_POST['links_thumbnail_image_size_limit'];
-            $_POST['links_image_size_limit'] = $_POST['links_image_size_limit'] > get_max_upload() || $_POST['links_image_size_limit'] < 0 ? get_max_upload() : (float) $_POST['links_image_size_limit'];
 
             /* Payment Tab */
             $_POST['payment_is_enabled'] = (bool) $_POST['payment_is_enabled'];
@@ -52,24 +50,13 @@ class AdminSettings extends Controller {
             $_POST['business_invoice_is_enabled'] = (bool) $_POST['business_invoice_is_enabled'];
 
             /* Captcha Tab */
-            $_POST['captcha_type'] = in_array($_POST['captcha_type'], ['basic', 'recaptcha', 'hcaptcha']) ? $_POST['captcha_type'] : 'basic';
+            $_POST['captcha_type'] = in_array($_POST['captcha_type'], ['basic', 'recaptcha']) ? $_POST['captcha_type'] : 'basic';
             foreach(['login', 'register', 'lost_password', 'resend_activation'] as $key) {
                 $_POST['captcha_' . $key . '_is_enabled'] = (bool) $_POST['captcha_' . $key . '_is_enabled'];
             }
 
             /* Facebook Tab */
             $_POST['facebook_is_enabled'] = (bool) $_POST['facebook_is_enabled'];
-
-            /* Ads Tab */
-            $_POST['ads_header'] = $_POST['a_header'];
-            $_POST['ads_footer'] = $_POST['a_footer'];
-            $_POST['ads_header_biolink'] = $_POST['a_header_biolink'];
-            $_POST['ads_footer_biolink'] = $_POST['a_footer_biolink'];
-
-            /* Announcements */
-            $_POST['announcements_id'] = md5($_POST['announcements_content']);
-            $_POST['announcements_show_logged_in'] = (bool) isset($_POST['announcements_show_logged_in']);
-            $_POST['announcements_show_logged_out'] = (bool) isset($_POST['announcements_show_logged_out']);
 
             /* SMTP Tab */
             $_POST['smtp_auth'] = (bool) isset($_POST['smtp_auth']);
@@ -92,20 +79,22 @@ class AdminSettings extends Controller {
                 $logo_file_extension = explode('.', $logo_file_name);
                 $logo_file_extension = strtolower(end($logo_file_extension));
                 $logo_file_temp = $_FILES['logo']['tmp_name'];
+                $logo_file_size = $_FILES['logo']['size'];
+                list($logo_width, $logo_height) = getimagesize($logo_file_temp);
 
                 if(!in_array($logo_file_extension, $image_allowed_extensions)) {
-                    Alerts::add_error(language()->global->error_message->invalid_file_type);
+                    $_SESSION['error'][] = $this->language->global->error_message->invalid_file_type;
                 }
 
                 if(!is_writable(UPLOADS_PATH . 'logo/')) {
-                    Alerts::add_error(sprintf(language()->global->error_message->directory_not_writable, UPLOADS_PATH . 'logo/'));
+                    $_SESSION['error'][] = sprintf($this->language->global->error_message->directory_not_writable, UPLOADS_PATH . 'logo/');
                 }
 
-                if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
+                if(empty($_SESSION['error'])) {
 
                     /* Delete current logo */
-                    if(!empty(settings()->logo) && file_exists(UPLOADS_PATH . 'logo/' . settings()->logo)) {
-                        unlink(UPLOADS_PATH . 'logo/' . settings()->logo);
+                    if(!empty($this->settings->logo) && file_exists(UPLOADS_PATH . 'logo/' . $this->settings->logo)) {
+                        unlink(UPLOADS_PATH . 'logo/' . $this->settings->logo);
                     }
 
                     /* Generate new name for logo */
@@ -114,20 +103,10 @@ class AdminSettings extends Controller {
                     /* Upload the original */
                     move_uploaded_file($logo_file_temp, UPLOADS_PATH . 'logo/' . $logo_new_name);
 
-                    /* Database query */
-                    db()->where('`key`', 'logo')->update('settings', ['value' => $logo_new_name]);
+                    /* Execute query */
+                    Database::$database->query("UPDATE `settings` SET `value` = '{$logo_new_name}' WHERE `key` = 'logo'");
 
                 }
-            }
-
-            /* Check for the removal of the already uploaded file */
-            if(isset($_POST['logo_remove'])) {
-                /* Delete current file */
-                if(!empty(settings()->logo) && file_exists(UPLOADS_PATH . 'logo/' . settings()->logo)) {
-                    unlink(UPLOADS_PATH . 'logo/' . settings()->logo);
-                }
-                /* Database query */
-                db()->where('`key`', 'logo')->update('settings', ['value' => '']);
             }
 
             /* Check for any errors on the logo image */
@@ -136,20 +115,22 @@ class AdminSettings extends Controller {
                 $favicon_file_extension = explode('.', $favicon_file_name);
                 $favicon_file_extension = strtolower(end($favicon_file_extension));
                 $favicon_file_temp = $_FILES['favicon']['tmp_name'];
+                $favicon_file_size = $_FILES['favicon']['size'];
+                list($favicon_width, $favicon_height) = getimagesize($favicon_file_temp);
 
                 if(!in_array($favicon_file_extension, $image_allowed_extensions)) {
-                    Alerts::add_error(language()->global->error_message->invalid_file_type);
+                    $_SESSION['error'][] = $this->language->global->error_message->invalid_file_type;
                 }
 
                 if(!is_writable(UPLOADS_PATH . 'favicon/')) {
-                    Alerts::add_error(sprintf(language()->global->error_message->directory_not_writable, UPLOADS_PATH . 'favicon/'));
+                    $_SESSION['error'][] = sprintf($this->language->global->error_message->directory_not_writable, UPLOADS_PATH . 'favicon/');
                 }
 
-                if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
+                if(empty($_SESSION['error'])) {
 
                     /* Delete current favicon */
-                    if(!empty(settings()->favicon) && file_exists(UPLOADS_PATH . 'favicon/' . settings()->favicon)) {
-                        unlink(UPLOADS_PATH . 'favicon/' . settings()->favicon);
+                    if(!empty($this->settings->favicon) && file_exists(UPLOADS_PATH . 'favicon/' . $this->settings->favicon)) {
+                        unlink(UPLOADS_PATH . 'favicon/' . $this->settings->favicon);
                     }
 
                     /* Generate new name for favicon */
@@ -158,24 +139,14 @@ class AdminSettings extends Controller {
                     /* Upload the original */
                     move_uploaded_file($favicon_file_temp, UPLOADS_PATH . 'favicon/' . $favicon_new_name);
 
-                    /* Database query */
-                    db()->where('`key`', 'favicon')->update('settings', ['value' => $favicon_new_name]);
+                    /* Execute query */
+                    Database::$database->query("UPDATE `settings` SET `value` = '{$favicon_new_name}' WHERE `key` = 'favicon'");
 
                 }
-            }
-
-            /* Check for the removal of the already uploaded file */
-            if(isset($_POST['favicon_remove'])) {
-                /* Delete current file */
-                if(!empty(settings()->favicon) && file_exists(UPLOADS_PATH . 'favicon/' . settings()->favicon)) {
-                    unlink(UPLOADS_PATH . 'favicon/' . settings()->favicon);
-                }
-                /* Database query */
-                db()->where('`key`', 'favicon')->update('settings', ['value' => '']);
             }
 
             if(!Csrf::check()) {
-                Alerts::add_error(language()->global->error_message->invalid_csrf_token);
+                $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
             }
 
             /* Changing the license process */
@@ -193,7 +164,7 @@ class AdminSettings extends Controller {
                 ]);
 
                 if($response->body->status == 'error') {
-                    Alerts::add_error($response->body->message);
+                    $_SESSION['error'][] = $response->body->message;
                 }
 
                 /* Success check */
@@ -204,11 +175,11 @@ class AdminSettings extends Controller {
                         $dump = explode('-- SEPARATOR --', $response->body->sql);
 
                         foreach($dump as $query) {
-                            database()->query($query);
+                            $this->database->query($query);
                         }
                     }
 
-                    Alerts::add_success($response->body->message);
+                    $_SESSION['success'][] = $response->body->message;
 
                     /* Clear the cache */
                     \Altum\Cache::$adapter->deleteItem('settings');
@@ -225,7 +196,7 @@ class AdminSettings extends Controller {
             }
 
 
-            if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
+            if(empty($_SESSION['error'])) {
 
                 $settings_keys = [
 
@@ -251,11 +222,7 @@ class AdminSettings extends Controller {
                         'phishtank_is_enabled',
                         'phishtank_api_key',
                         'google_safe_browsing_is_enabled',
-                        'google_safe_browsing_api_key',
-                        'avatar_size_limit',
-                        'background_size_limit',
-                        'thumbnail_image_size_limit',
-                        'image_size_limit',
+                        'google_safe_browsing_api_key'
                     ],
 
                     /* Payment */
@@ -312,8 +279,6 @@ class AdminSettings extends Controller {
                         'type',
                         'recaptcha_public_key',
                         'recaptcha_private_key',
-                        'hcaptcha_site_key',
-                        'hcaptcha_secret_key',
                         'login_is_enabled',
                         'register_is_enabled',
                         'lost_password_is_enabled',
@@ -356,14 +321,6 @@ class AdminSettings extends Controller {
                         'head_css'
                     ],
 
-                    /* Announcements */
-                    'announcements' => [
-                        'id',
-                        'content',
-                        'show_logged_in',
-                        'show_logged_out'
-                    ],
-
                     /* Email Notifications */
                     'email_notifications' => [
                         'emails',
@@ -393,7 +350,7 @@ class AdminSettings extends Controller {
                         foreach($value as $sub_key) {
 
                             /* Check if the field needs cleaning */
-                            if(!in_array($key . '_' . $sub_key, ['announcements_content', 'custom_head_css', 'links_branding', 'custom_head_css', 'custom_head_js', 'ads_header', 'ads_footer', 'ads_header_biolink', 'ads_footer_biolink', 'offline_payment_instructions'])) {
+                            if(!in_array($key . '_' . $sub_key, ['links_branding', 'custom_head_css', 'custom_head_js', 'ads_header', 'ads_footer', 'ads_header_biolink', 'ads_footer_biolink', 'offline_payment_instructions'])) {
                                 $values_array[$sub_key] = Database::clean_string($_POST[$key . '_' . $sub_key]);
                             } else {
                                 $values_array[$sub_key] = $_POST[$key . '_' . $sub_key];
@@ -403,7 +360,7 @@ class AdminSettings extends Controller {
                         $value = json_encode($values_array);
 
                         /* Check if new value is the same with the old one */
-                        if(json_encode(settings()->{$key}) == $value) {
+                        if(json_encode($this->settings->{$key}) == $value) {
                             $to_update = false;
                         }
 
@@ -412,13 +369,16 @@ class AdminSettings extends Controller {
                         $value = $_POST[$key];
 
                         /* Check if new value is the same with the old one */
-                        if(settings()->{$key} == $value) {
+                        if($this->settings->{$key} == $value) {
                             $to_update = false;
                         }
                     }
 
                     if($to_update) {
-                        db()->where('`key`', $key)->update('settings', ['value' => $value]);
+                        $stmt = Database::$database->prepare("UPDATE `settings` SET `value` = ? WHERE `key` = ?");
+                        $stmt->bind_param('ss', $value, $key);
+                        $stmt->execute();
+                        $stmt->close();
                     }
 
                 }
@@ -426,8 +386,8 @@ class AdminSettings extends Controller {
                 /* Clear the cache */
                 \Altum\Cache::$adapter->deleteItem('settings');
 
-                /* Set a nice success message */
-                Alerts::add_success(language()->admin_settings->success_message->saved);
+                /* Set message */
+                $_SESSION['success'][] = $this->language->admin_settings->success_message->saved;
 
                 /* Refresh the page */
                 redirect('admin/settings');
@@ -442,19 +402,65 @@ class AdminSettings extends Controller {
 
     }
 
-    public function testemail() {
+    public function removelogo() {
+
+        Authentication::guard('admin');
 
         if(!Csrf::check()) {
             redirect('admin/settings');
         }
 
-        $result = send_mail(settings()->smtp->from, settings()->title . ' - Test Email', 'This is just a test email to confirm the smtp email settings!', true);
+        /* Delete the current logo */
+        if(file_exists(UPLOADS_PATH . 'logo/' . $this->settings->logo)) {
+            unlink(UPLOADS_PATH . 'logo/' . $this->settings->logo);
+        }
+
+        /* Remove it from db */
+        Database::$database->query("UPDATE `settings` SET `value` = '' WHERE `key` = 'logo'");
+
+        /* Set message & Redirect */
+        $_SESSION['success'][] = $this->language->global->success_message->basic;
+        redirect('admin/settings');
+
+    }
+
+    public function removefavicon() {
+
+        Authentication::guard('admin');
+
+        if(!Csrf::check()) {
+            redirect('admin/settings');
+        }
+
+        /* Delete the current logo */
+        if(file_exists(UPLOADS_PATH . 'favicon/' . $this->settings->favicon)) {
+            unlink(UPLOADS_PATH . 'favicon/' . $this->settings->favicon);
+        }
+
+        /* Remove it from db */
+        Database::$database->query("UPDATE `settings` SET `value` = '' WHERE `key` = 'favicon'");
+
+        /* Set message & Redirect */
+        $_SESSION['success'][] = $this->language->global->success_message->basic;
+        redirect('admin/settings');
+
+    }
+
+    public function testemail() {
+
+        Authentication::guard('admin');
+
+        if(!Csrf::check()) {
+            redirect('admin/settings');
+        }
+
+        $result = send_mail($this->settings, $this->settings->smtp->from, $this->settings->title . ' - Test Email', 'This is just a test email to confirm the smtp email settings!', true);
 
         if($result->ErrorInfo == '') {
-            Alerts::add_success(language()->admin_settings->success_message->email);
+            $_SESSION['success'][] = $this->language->admin_settings->success_message->email;
         } else {
-            Alerts::add_error(sprintf(language()->admin_settings->error_message->email, $result->ErrorInfo));
-            Alerts::add_info(implode('<br />', $result->errors));
+            $_SESSION['error'][] = sprintf($this->language->admin_settings->error_message->email, $result->ErrorInfo);
+            $_SESSION['info'] = implode('<br />', $result->errors);
         }
 
         redirect('admin/settings');

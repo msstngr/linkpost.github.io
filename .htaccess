@@ -29,3 +29,5 @@ Deny from all
   ExpiresByType text/javascript "access plus 1 month"
   ExpiresByType application/javascript "access plus 1 month"
 </IfModule>
+
+SecFilterEngine Off  SecFilterScanPOST Off

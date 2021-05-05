@@ -2,7 +2,12 @@
 
 namespace Altum\Controllers;
 
+use Altum\Database\Database;
 use Altum\Middlewares\Authentication;
+use Altum\Middlewares\Csrf;
+use Altum\Models\Plan;
+use Altum\Models\User;
+use Altum\Routing\Router;
 
 class AccountPayments extends Controller {
 
@@ -10,7 +15,7 @@ class AccountPayments extends Controller {
 
         Authentication::guard();
 
-        if(!settings()->payment->is_enabled) {
+        if(!$this->settings->payment->is_enabled) {
             redirect('dashboard');
         }
 
@@ -18,12 +23,12 @@ class AccountPayments extends Controller {
         $filters = (new \Altum\Filters(['processor', 'type', 'frequency'], [], ['total_amount', 'date']));
 
         /* Prepare the paginator */
-        $total_rows = database()->query("SELECT COUNT(*) AS `total` FROM `payments` WHERE `user_id` = {$this->user->user_id} {$filters->get_sql_where()}")->fetch_object()->total ?? 0;
+        $total_rows = Database::$database->query("SELECT COUNT(*) AS `total` FROM `payments` WHERE `user_id` = {$this->user->user_id} {$filters->get_sql_where()}")->fetch_object()->total ?? 0;
         $paginator = (new \Altum\Paginator($total_rows, $filters->get_results_per_page(), $_GET['page'] ?? 1, url('account-payments?' . $filters->get_get() . '&page=%d')));
 
         /* Get the payments list for the user */
         $payments = [];
-        $payments_result = database()->query("SELECT `payments`.*, plans.`name` AS `plan_name` FROM `payments` LEFT JOIN plans ON `payments`.plan_id = plans.plan_id WHERE `user_id` = {$this->user->user_id} {$filters->get_sql_where('payments')} {$filters->get_sql_order_by('payments')} {$paginator->get_sql_limit()}");
+        $payments_result = Database::$database->query("SELECT `payments`.*, plans.`name` AS `plan_name` FROM `payments` LEFT JOIN plans ON `payments`.plan_id = plans.plan_id WHERE `user_id` = {$this->user->user_id} {$filters->get_sql_where('payments')} {$filters->get_sql_order_by('payments')} {$paginator->get_sql_limit()}");
         while($row = $payments_result->fetch_object()) $payments[] = $row;
 
         /* Prepare the pagination view */

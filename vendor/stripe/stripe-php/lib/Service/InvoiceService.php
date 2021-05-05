@@ -45,10 +45,7 @@ class InvoiceService extends \Stripe\Service\AbstractService
     /**
      * This endpoint creates a draft invoice for a given customer. The draft invoice
      * created pulls in all pending invoice items on that customer, including
-     * prorations. The invoice remains a draft until you <a
-     * href="#finalize_invoice">finalize</a> the invoice, which allows you to <a
-     * href="#pay_invoice">pay</a> or <a href="#send_invoice">send</a> the invoice to
-     * your customers.
+     * prorations.
      *
      * @param null|array $params
      * @param null|array|\Stripe\Util\RequestOptions $opts

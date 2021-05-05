@@ -5,8 +5,8 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title"><?= language()->domain_update_modal->header ?></h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="<?= language()->global->close ?>">
+                <h5 class="modal-title"><?= $this->language->domain_update_modal->header ?></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="<?= $this->language->global->close ?>">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -19,7 +19,7 @@
                     <div class="notification-container"></div>
 
                     <div class="form-group">
-                        <label><i class="fa fa-fw fa-sm fa-globe mr-1"></i> <?= language()->domains->input->host ?></label>
+                        <label><i class="fa fa-fw fa-sm fa-globe mr-1"></i> <?= $this->language->domains->input->host ?></label>
                         <div class="input-group">
                             <div class="input-group-prepend">
                                 <select name="scheme" class="appearance-none select-custom-altum form-control input-group-text">
@@ -28,25 +28,19 @@
                                 </select>
                             </div>
 
-                            <input type="text" class="form-control" name="host" placeholder="<?= language()->domains->input->host_placeholder ?>" required="required" />
+                            <input type="text" class="form-control" name="host" placeholder="<?= $this->language->domains->input->host_placeholder ?>" required="required" />
                         </div>
-                        <small class="form-text text-muted"><?= language()->domains->input->host_help ?></small>
+                        <small class="form-text text-muted"><?= $this->language->domains->input->host_help ?></small>
                     </div>
 
                     <div class="form-group">
-                        <label><i class="fa fa-fw fa-sitemap fa-sm mr-1"></i> <?= language()->domains->input->custom_index_url ?></label>
-                        <input type="text" class="form-control" name="custom_index_url" placeholder="<?= language()->domains->input->custom_index_url_placeholder ?>" />
-                        <small class="form-text text-muted"><?= language()->domains->input->custom_index_url_help ?></small>
-                    </div>
-
-                    <div class="form-group">
-                        <label><i class="fa fa-fw fa-location-arrow  fa-sm mr-1"></i> <?= language()->domains->input->custom_not_found_url ?></label>
-                        <input type="text" class="form-control" name="custom_not_found_url" placeholder="<?= language()->domains->input->custom_not_found_url_placeholder ?>" />
-                        <small class="form-text text-muted"><?= language()->domains->input->custom_not_found_url_help ?></small>
+                        <label><i class="fa fa-fw fa-sitemap fa-sm mr-1"></i> <?= $this->language->domains->input->custom_index_url ?></label>
+                        <input type="text" class="form-control" name="custom_index_url" placeholder="<?= $this->language->domains->input->custom_index_url_placeholder ?>" />
+                        <small class="form-text text-muted"><?= $this->language->domains->input->custom_index_url_help ?></small>
                     </div>
 
                     <div class="text-center mt-4">
-                        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= language()->global->submit ?></button>
+                        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= $this->language->global->submit ?></button>
                     </div>
                 </form>
             </div>
@@ -63,13 +57,11 @@
         let scheme = $(event.relatedTarget).data('scheme');
         let host = $(event.relatedTarget).data('host');
         let custom_index_url = $(event.relatedTarget).data('custom-index-url');
-        let custom_not_found_url = $(event.relatedTarget).data('custom-not-found-url');
 
         $(event.currentTarget).find('input[name="domain_id"]').val(domain_id);
         $(event.currentTarget).find('select[name="scheme"]').val(scheme);
         $(event.currentTarget).find('input[name="host"]').val(host);
         $(event.currentTarget).find('input[name="custom_index_url"]').val(custom_index_url);
-        $(event.currentTarget).find('input[name="custom_not_found_url"]').val(custom_not_found_url);
     });
 
     $('form[name="domain_update"]').on('submit', event => {

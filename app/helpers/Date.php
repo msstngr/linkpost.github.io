@@ -43,7 +43,7 @@ class Date {
             case $format_type === 1:
 
                 return sprintf(
-                    language()->global->date->datetime_ymd_his_format,
+                    Language::get()->global->date->datetime_ymd_his_format,
                     $datetime->format('Y'),
                     $datetime->format('m'),
                     $datetime->format('d'),
@@ -57,9 +57,9 @@ class Date {
             case $format_type === 2:
 
                 return sprintf(
-                    language()->global->date->datetime_readable_format,
+                    Language::get()->global->date->datetime_readable_format,
                     $datetime->format('j'),
-                    language()->global->date->long_months->{$datetime->format('n')},
+                    Language::get()->global->date->long_months->{$datetime->format('n')},
                     $datetime->format('Y')
                 );
 
@@ -68,7 +68,7 @@ class Date {
             case $format_type === 3:
 
                 return sprintf(
-                    language()->global->date->datetime_his_format,
+                    Language::get()->global->date->datetime_his_format,
                     $datetime->format('H'),
                     $datetime->format('i'),
                     $datetime->format('s')
@@ -78,7 +78,7 @@ class Date {
 
             case $format_type === 4:
                 return sprintf(
-                    language()->global->date->datetime_ymd_format,
+                    Language::get()->global->date->datetime_ymd_format,
                     $datetime->format('Y'),
                     $datetime->format('m'),
                     $datetime->format('d')
@@ -89,9 +89,9 @@ class Date {
             case $format_type === 5:
 
                 return sprintf(
-                    language()->global->date->datetime_small_readable_format,
+                    Language::get()->global->date->datetime_small_readable_format,
                     $datetime->format('j'),
-                    language()->global->date->short_months->{$datetime->format('n')}
+                    Language::get()->global->date->short_months->{$datetime->format('n')}
                 );
 
                 break;
@@ -138,73 +138,6 @@ class Date {
         return $return;
     }
 
-    /* Another helper function, expecting Y-m-d format */
-    public static function get_start_end_dates_new($start_date = null, $end_date = null) {
-
-        $current_timezone = new \DateTimeZone(self::$timezone);
-        $wanted_timezone = new \DateTimeZone(self::$default_timezone);
-
-        if(is_null($start_date) && is_null($end_date)) {
-            $start_date = isset($_GET['start_date']) ? (new \DateTime($_GET['start_date'], $current_timezone)) : (new \DateTime('now', $current_timezone))->modify('-30 day');
-            $end_date = isset($_GET['end_date']) ? (new \DateTime($_GET['end_date'], $current_timezone)) : (new \DateTime('now', $current_timezone));
-        } else {
-            $start_date = (new \DateTime($start_date, $current_timezone));
-            $end_date = (new \DateTime($end_date, $current_timezone));
-        }
-
-        $difference = $start_date->diff($end_date);
-
-        $return = [];
-
-        /* Display hours on chart */
-        if($start_date == $end_date) {
-            $return['query_date_format'] = '%Y-%m-%d %H';
-
-            $return['process'] = function($date) {
-                $date = explode(' ', $date);
-                return ((new \DateTime($date[0]))->setTime($date[1], 0)->setTimezone(new \DateTimeZone(\Altum\Date::$timezone))->format('H A'));
-            };
-        }
-
-        /* Display days on chart */
-        $days_difference = $difference->d + ($difference->m * 30) + ($difference->y * 365);
-        if($days_difference >= 1) {
-            $return['query_date_format'] = '%Y-%m-%d';
-
-            $return['process'] = function($date) {
-                return \Altum\Date::get($date, 2);
-            };
-        }
-
-        /* Display months on chart */
-        $months_difference = ($difference->d / 30) + $difference->m + ($difference->y * 12);
-        if($months_difference >= 2) {
-            $return['query_date_format'] = '%Y-%m';
-
-            $return['process'] = function($date) {
-                return \Altum\Date::get($date, 'Y-m');
-            };
-        }
-
-        /* Display years on chart */
-        $years_difference = ($difference->d / 365) + ($difference->m / 12) + $difference->y;
-        if($years_difference >= 2) {
-            $return['query_date_format'] = '%Y';
-
-            $return['process'] = function($date) {
-                return \Altum\Date::get($date, 'Y');
-            };
-        }
-
-        $return['start_date'] = $start_date->format('Y-m-d');
-        $return['end_date'] = $end_date->format('Y-m-d');
-
-        $return['query_start_date'] = $start_date->setTimezone($wanted_timezone)->format('Y-m-d H:i:s');
-        $return['query_end_date'] = $end_date->setTimezone($wanted_timezone)->modify('+1 day')->format('Y-m-d H:i:s');
-
-        return $return;
-    }
-
     /* Seconds to his */
     public static function get_seconds_to_his($seconds) {
         $hours = floor($seconds / 3600);
@@ -212,7 +145,7 @@ class Date {
         $seconds = $seconds % 60;
 
         return sprintf(
-            language()->global->date->datetime_his_format,
+            Language::get()->global->date->datetime_his_format,
             $hours,
             $minutes,
             $seconds
@@ -226,7 +159,7 @@ class Date {
         $estimate_time = $end_date - (new \DateTime($date))->getTimestamp();
 
         if($estimate_time < 1) {
-            return language()->global->date->now;
+            return Language::get()->global->date->now;
         }
 
         $condition = [
@@ -250,7 +183,7 @@ class Date {
                 $r = floor($d);
 
                 /* Determine the language string needed */
-                $language_string_time = $r > 1 ? language()->global->date->{$string . 's'} : language()->global->date->{$string};
+                $language_string_time = $r > 1 ? Language::get()->global->date->{$string . 's'} : Language::get()->global->date->{$string};
 
                 /* Append it to the result */
                 $result .= ' ' . $r . ' ' . $language_string_time;
@@ -270,7 +203,7 @@ class Date {
         $estimate_time = time() - (new \DateTime($date))->getTimestamp();
 
         if($estimate_time < 1) {
-            return language()->global->date->now;
+            return Language::get()->global->date->now;
         }
 
         $condition = [
@@ -289,10 +222,10 @@ class Date {
                 $r = round($d);
 
                 /* Determine the language string needed */
-                $language_string_time = $r > 1 ? language()->global->date->{$str . 's'} : language()->global->date->{$str};
+                $language_string_time = $r > 1 ? Language::get()->global->date->{$str . 's'} : Language::get()->global->date->{$str};
 
                 return sprintf(
-                    language()->global->date->time_ago,
+                    Language::get()->global->date->time_ago,
                     $r,
                     $language_string_time
                 );
@@ -306,7 +239,7 @@ class Date {
         $estimate_time = (new \DateTime($date))->getTimestamp() - time();
 
         if($estimate_time < 1) {
-            return language()->global->date->now;
+            return Language::get()->global->date->now;
         }
 
         $condition = [
@@ -325,10 +258,10 @@ class Date {
                 $r = round($d);
 
                 /* Determine the language string needed */
-                $language_string_time = $r > 1 ? language()->global->date->{$str . 's'} : language()->global->date->{$str};
+                $language_string_time = $r > 1 ? Language::get()->global->date->{$str . 's'} : Language::get()->global->date->{$str};
 
                 return sprintf(
-                    language()->global->date->time_until,
+                    Language::get()->global->date->time_until,
                     $r,
                     $language_string_time
                 );

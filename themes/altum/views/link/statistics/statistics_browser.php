@@ -2,8 +2,8 @@
 
 <div class="card my-3">
     <div class="card-body">
-        <h3 class="h5"><?= language()->link->statistics->browser ?></h3>
-        <p class="text-muted mb-3"><?= language()->link->statistics->browser_help ?></p>
+        <h3 class="h5"><?= $this->language->link->statistics->browser ?></h3>
+        <p class="text-muted mb-3"><?= $this->language->link->statistics->browser_help ?></p>
 
         <?php foreach($data->rows as $row): ?>
             <?php $percentage = round($row->total / $data->total_sum * 100, 1) ?>
@@ -12,7 +12,7 @@
                 <div class="d-flex justify-content-between mb-1">
                     <div class="text-truncate">
                         <?php if(!$row->browser_name): ?>
-                            <span><?= language()->link->statistics->browser_unknown ?></span>
+                            <span><?= $this->language->link->statistics->browser_unknown ?></span>
                         <?php else: ?>
                             <span><?= $row->browser_name ?></span>
                         <?php endif ?>

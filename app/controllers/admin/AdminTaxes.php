@@ -2,18 +2,21 @@
 
 namespace Altum\Controllers;
 
-use Altum\Alerts;
+use Altum\Database\Database;
 use Altum\Middlewares\Csrf;
+use Altum\Middlewares\Authentication;
 
 class AdminTaxes extends Controller {
 
     public function index() {
 
-        $taxes = db()->get('taxes');
+        Authentication::guard('admin');
+
+        $taxes_result = $this->database->query("SELECT * FROM `taxes`");
 
         /* Main View */
         $data = [
-            'taxes' => $taxes
+            'taxes_result' => $taxes_result
         ];
 
         $view = new \Altum\Views\View('admin/taxes/index', (array) $this);
@@ -24,19 +27,22 @@ class AdminTaxes extends Controller {
 
     public function delete() {
 
-        $tax_id = isset($this->params[0]) ? (int) $this->params[0] : null;
+        Authentication::guard();
+
+        $tax_id = (isset($this->params[0])) ? $this->params[0] : false;
 
         if(!Csrf::check('global_token')) {
-            Alerts::add_error(language()->global->error_message->invalid_csrf_token);
+            $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
+            redirect('admin/taxes');
         }
 
-        if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
+        if(empty($_SESSION['error'])) {
 
             /* Delete the tax */
-            db()->where('tax_id', $tax_id)->delete('taxes');
+            Database::$database->query("DELETE FROM `taxes` WHERE `tax_id` = {$tax_id}");
 
-            /* Set a nice success message */
-            Alerts::add_success(language()->admin_tax_delete_modal->success_message);
+            /* Success message */
+            $_SESSION['success'][] = $this->language->admin_tax_delete_modal->success_message;
 
         }
 

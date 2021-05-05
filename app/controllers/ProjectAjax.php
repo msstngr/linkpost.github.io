@@ -35,32 +35,31 @@ class ProjectAjax extends Controller {
     }
 
     private function create() {
+
         $_POST['name'] = trim(Database::clean_string($_POST['name']));
-        $_POST['color'] = !preg_match('/#([A-Fa-f0-9]{3,4}){1,2}\b/i', $_POST['color']) ? '#000' : $_POST['color'];
 
         /* Check for possible errors */
         if(empty($_POST['name'])) {
-            $errors[] = language()->global->error_message->empty_fields;
+            $errors[] = $this->language->global->error_message->empty_fields;
         }
 
         /* Make sure that the user didn't exceed the limit */
-        $user_total_projects = database()->query("SELECT COUNT(*) AS `total` FROM `projects` WHERE `user_id` = {$this->user->user_id}")->fetch_object()->total;
+        $user_total_projects = Database::$database->query("SELECT COUNT(*) AS `total` FROM `projects` WHERE `user_id` = {$this->user->user_id}")->fetch_object()->total;
         if($this->user->plan_settings->projects_limit != -1 && $user_total_projects >= $this->user->plan_settings->projects_limit) {
-            Response::json(language()->project_create_modal->error_message->projects_limit, 'error');
+            Response::json($this->language->project_create_modal->error_message->projects_limit, 'error');
         }
 
 
         if(empty($errors)) {
 
             /* Insert to database */
-            db()->insert('projects', [
-                'user_id' => $this->user->user_id,
-                'name' => $_POST['name'],
-                'color' => $_POST['color'],
-                'datetime' => Date::$date,
-            ]);
+            $stmt = Database::$database->prepare("INSERT INTO `projects` (`user_id`, `name`, `date`) VALUES (?, ?, ?)");
+            $stmt->bind_param('sss', $this->user->user_id, $_POST['name'], Date::$date);
+            $stmt->execute();
+            $project_id = $stmt->insert_id;
+            $stmt->close();
 
-            Response::json(language()->project_create_modal->success_message->created, 'success');
+            Response::json($this->language->project_create_modal->success_message->created, 'success');
 
         }
     }
@@ -68,23 +67,21 @@ class ProjectAjax extends Controller {
     private function update() {
         $_POST['project_id'] = (int) $_POST['project_id'];
         $_POST['name'] = trim(Database::clean_string($_POST['name']));
-        $_POST['color'] = !preg_match('/#([A-Fa-f0-9]{3,4}){1,2}\b/i', $_POST['color']) ? '#000' : $_POST['color'];
 
         /* Check for possible errors */
         if(empty($_POST['name'])) {
-            $errors[] = language()->global->error_message->empty_fields;
+            $errors[] = $this->language->global->error_message->empty_fields;
         }
 
         if(empty($errors)) {
 
             /* Insert to database */
-            db()->where('project_id', $_POST['project_id'])->where('user_id', $this->user->user_id)->update('projects', [
-                'name' => $_POST['name'],
-                'color' => $_POST['color'],
-                'last_datetime' => Date::$date,
-            ]);
+            $stmt = Database::$database->prepare("UPDATE `projects` SET `name` = ? WHERE `project_id` = ? AND `user_id` = ?");
+            $stmt->bind_param('sss', $_POST['name'], $_POST['project_id'], $this->user->user_id);
+            $stmt->execute();
+            $stmt->close();
 
-            Response::json(language()->project_update_modal->success_message->updated, 'success');
+            Response::json($this->language->project_update_modal->success_message->updated, 'success');
 
         }
     }
@@ -92,10 +89,21 @@ class ProjectAjax extends Controller {
     private function delete() {
         $_POST['project_id'] = (int) $_POST['project_id'];
 
-        /* Delete from database */
-        db()->where('project_id', $_POST['project_id'])->where('user_id', $this->user->user_id)->delete('projects');
+        /* Check for possible errors */
+        if(!Database::exists('project_id', 'projects', ['project_id' => $_POST['project_id']])) {
+            $errors[] = true;
+        }
 
-        Response::json(language()->project_delete_modal->success_message, 'success');
+        if(empty($errors)) {
 
+            /* Delete from database */
+            $stmt = Database::$database->prepare("DELETE FROM `projects` WHERE `project_id` = ? AND `user_id` = ?");
+            $stmt->bind_param('ss', $_POST['project_id'], $this->user->user_id);
+            $stmt->execute();
+            $stmt->close();
+
+            Response::json($this->language->project_delete_modal->success_message, 'success');
+
+        }
     }
 }

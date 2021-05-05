@@ -132,6 +132,7 @@ trait Ereader
                 'series'        =>  'Reader',
                 'type'          =>  Constants\DeviceType::EREADER
             ]);
+
         }
     }
 

@@ -16,7 +16,9 @@ declare(strict_types=1);
 
 namespace Phpfastcache\Drivers\Sqlite;
 
-use Phpfastcache\Config\{ConfigurationOption, IOConfigurationOptionTrait};
+use Phpfastcache\Config\{
+    ConfigurationOption, IOConfigurationOptionTrait
+};
 
 class Config extends ConfigurationOption
 {

@@ -2,6 +2,8 @@
 
 namespace Altum\Models;
 
+use Altum\Database\Database;
+
 class Settings extends Model {
 
     public function get() {
@@ -11,7 +13,7 @@ class Settings extends Model {
         /* Set cache if not existing */
         if(!$cache_instance->get()) {
 
-            $result = database()->query("SELECT * FROM `settings`");
+            $result = Database::$database->query("SELECT * FROM `settings`");
             $data = new \StdClass();
 
             while($row = $result->fetch_object()) {

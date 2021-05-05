@@ -1,5 +1,4 @@
 <?php
-
 /**
  *
  * This file is part of phpFastCache.
@@ -16,12 +15,7 @@ declare(strict_types=1);
 
 namespace Phpfastcache\Core\Item;
 
-use DateInterval;
-use DateTime;
-use DateTimeInterface;
-use Phpfastcache\Event\EventManagerDispatcherTrait;
 use Phpfastcache\Exceptions\PhpfastcacheInvalidArgumentException;
-
 
 /**
  * Trait ItemBaseTrait
@@ -30,7 +24,6 @@ use Phpfastcache\Exceptions\PhpfastcacheInvalidArgumentException;
 trait ItemBaseTrait
 {
     use ItemExtendedTrait;
-    use EventManagerDispatcherTrait;
 
     /**
      * @var bool
@@ -48,17 +41,17 @@ trait ItemBaseTrait
     protected $data;
 
     /**
-     * @var DateTimeInterface
+     * @var \DateTimeInterface
      */
     protected $expirationDate;
 
     /**
-     * @var DateTimeInterface
+     * @var \DateTimeInterface
      */
     protected $creationDate;
 
     /**
-     * @var DateTimeInterface
+     * @var \DateTimeInterface
      */
     protected $modificationDate;
 
@@ -149,17 +142,17 @@ trait ItemBaseTrait
     }
 
     /**
-     * @param DateTimeInterface $expiration
+     * @param \DateTimeInterface $expiration
      * @return ExtendedCacheItemInterface
      * @throws PhpfastcacheInvalidArgumentException
      */
     public function expiresAt($expiration): ExtendedCacheItemInterface
     {
-        if ($expiration instanceof DateTimeInterface) {
+        if ($expiration instanceof \DateTimeInterface) {
             /**
              * @eventName CacheItemExpireAt
              * @param ExtendedCacheItemInterface $this
-             * @param DateTimeInterface $expiration
+             * @param \DateTimeInterface $expiration
              */
             $this->eventManager->dispatch('CacheItemExpireAt', $this, $expiration);
             $this->expirationDate = $expiration;
@@ -171,7 +164,7 @@ trait ItemBaseTrait
     }
 
     /**
-     * @param DateInterval|int $time
+     * @param \DateInterval|int $time
      * @return $this
      * @throws PhpfastcacheInvalidArgumentException
      */
@@ -189,21 +182,21 @@ trait ItemBaseTrait
             /**
              * @eventName CacheItemExpireAt
              * @param ExtendedCacheItemInterface $this
-             * @param DateTimeInterface $expiration
+             * @param \DateTimeInterface $expiration
              */
             $this->eventManager->dispatch('CacheItemExpireAfter', $this, $time);
 
-            $this->expirationDate = (new DateTime())->add(new DateInterval(\sprintf('PT%dS', $time)));
+            $this->expirationDate = (new \DateTime())->add(new \DateInterval(\sprintf('PT%dS', $time)));
         } else {
-            if ($time instanceof DateInterval) {
+            if ($time instanceof \DateInterval) {
                 /**
                  * @eventName CacheItemExpireAt
                  * @param ExtendedCacheItemInterface $this
-                 * @param DateTimeInterface $expiration
+                 * @param \DateTimeInterface $expiration
                  */
                 $this->eventManager->dispatch('CacheItemExpireAfter', $this, $time);
 
-                $this->expirationDate = (new DateTime())->add($time);
+                $this->expirationDate = (new \DateTime())->add($time);
             } else {
                 throw new PhpfastcacheInvalidArgumentException(\sprintf('Invalid date format, got "%s"', \gettype($time)));
             }

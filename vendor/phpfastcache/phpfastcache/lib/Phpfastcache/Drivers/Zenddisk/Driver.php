@@ -1,5 +1,4 @@
 <?php
-
 /**
  *
  * This file is part of phpFastCache.
@@ -15,12 +14,14 @@ declare(strict_types=1);
 
 namespace Phpfastcache\Drivers\Zenddisk;
 
-use Phpfastcache\Cluster\AggregatablePoolInterface;
-use Phpfastcache\Core\Pool\{DriverBaseTrait, ExtendedCacheItemPoolInterface};
+use Phpfastcache\Core\Pool\{
+    DriverBaseTrait, ExtendedCacheItemPoolInterface
+};
 use Phpfastcache\Entities\DriverStatistic;
-use Phpfastcache\Exceptions\{PhpfastcacheInvalidArgumentException};
+use Phpfastcache\Exceptions\{
+    PhpfastcacheInvalidArgumentException
+};
 use Psr\Cache\CacheItemInterface;
-
 
 /**
  * Class Driver (zend disk cache)
@@ -29,7 +30,7 @@ use Psr\Cache\CacheItemInterface;
  * @property Config $config Config object
  * @method Config getConfig() Return the config object
  */
-class Driver implements ExtendedCacheItemPoolInterface, AggregatablePoolInterface
+class Driver implements ExtendedCacheItemPoolInterface
 {
     use DriverBaseTrait;
 
@@ -38,33 +39,7 @@ class Driver implements ExtendedCacheItemPoolInterface, AggregatablePoolInterfac
      */
     public function driverCheck(): bool
     {
-        return extension_loaded('Zend Data Cache') && function_exists('zend_disk_cache_store');
-    }
-
-    /**
-     * @return string
-     */
-    public function getHelp(): string
-    {
-        return <<<HELP
-<p>
-This driver rely on Zend Server 8.5+, see: https://www.zend.com/en/products/zend_server
-</p>
-HELP;
-    }
-
-    /**
-     * @return DriverStatistic
-     */
-    public function getStats(): DriverStatistic
-    {
-        $stat = new DriverStatistic();
-        $stat->setInfo('[ZendDisk] A void info string')
-            ->setSize(0)
-            ->setData(implode(', ', array_keys($this->itemInstances)))
-            ->setRawData(false);
-
-        return $stat;
+        return \extension_loaded('Zend Data Cache') && \function_exists('zend_disk_cache_store');
     }
 
     /**
@@ -76,7 +51,7 @@ HELP;
     }
 
     /**
-     * @param CacheItemInterface $item
+     * @param \Psr\Cache\CacheItemInterface $item
      * @return null|array
      */
     protected function driverRead(CacheItemInterface $item)
@@ -90,7 +65,7 @@ HELP;
     }
 
     /**
-     * @param CacheItemInterface $item
+     * @param \Psr\Cache\CacheItemInterface $item
      * @return mixed
      * @throws PhpfastcacheInvalidArgumentException
      */
@@ -100,7 +75,7 @@ HELP;
          * Check for Cross-Driver type confusion
          */
         if ($item instanceof Item) {
-            $ttl = $item->getExpirationDate()->getTimestamp() - time();
+            $ttl = $item->getExpirationDate()->getTimestamp() - \time();
 
             return zend_disk_cache_store($item->getKey(), $this->driverPreWrap($item), ($ttl > 0 ? $ttl : 0));
         }
@@ -108,14 +83,8 @@ HELP;
         throw new PhpfastcacheInvalidArgumentException('Cross-Driver type confusion detected');
     }
 
-    /********************
-     *
-     * PSR-6 Extended Methods
-     *
-     *******************/
-
     /**
-     * @param CacheItemInterface $item
+     * @param \Psr\Cache\CacheItemInterface $item
      * @return bool
      * @throws PhpfastcacheInvalidArgumentException
      */
@@ -137,5 +106,37 @@ HELP;
     protected function driverClear(): bool
     {
         return @zend_disk_cache_clear();
+    }
+
+    /********************
+     *
+     * PSR-6 Extended Methods
+     *
+     *******************/
+
+    /**
+     * @return string
+     */
+    public function getHelp(): string
+    {
+        return <<<HELP
+<p>
+This driver rely on Zend Server 8.5+, see: https://www.zend.com/en/products/zend_server
+</p>
+HELP;
+    }
+
+    /**
+     * @return DriverStatistic
+     */
+    public function getStats(): DriverStatistic
+    {
+        $stat = new DriverStatistic();
+        $stat->setInfo('[ZendDisk] A void info string')
+            ->setSize(0)
+            ->setData(\implode(', ', \array_keys($this->itemInstances)))
+            ->setRawData(false);
+
+        return $stat;
     }
 }

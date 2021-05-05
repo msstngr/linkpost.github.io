@@ -1,33 +1,33 @@
 <?php defined('ALTUMCODE') || die() ?>
 
 <div class="d-flex justify-content-between">
-    <h2 class="h4"><?= language()->links->header ?></h2>
+    <h2 class="h4"><?= $this->language->links->header ?></h2>
 
     <div class="col-auto p-0 d-flex">
         <div>
-            <?php if(settings()->links->shortener_is_enabled): ?>
+            <?php if($this->settings->links->shortener_is_enabled): ?>
                 <div class="dropdown">
                     <button type="button" data-toggle="dropdown" class="btn btn-primary rounded-pill dropdown-toggle dropdown-toggle-simple">
-                        <i class="fa fa-fw fa-plus-circle"></i> <?= language()->links->create ?>
+                        <i class="fa fa-fw fa-plus-circle"></i> <?= $this->language->links->create ?>
                     </button>
 
                     <div class="dropdown-menu dropdown-menu-right">
                         <a href="#" class="dropdown-item" data-toggle="modal" data-target="#create_biolink">
-                            <i class="fa fa-fw fa-circle fa-sm mr-1" style="color: <?= language()->link->biolink->color ?>"></i>
+                            <i class="fa fa-fw fa-circle fa-sm mr-1" style="color: <?= $this->language->link->biolink->color ?>"></i>
 
-                            <?= language()->link->biolink->name ?>
+                            <?= $this->language->link->biolink->name ?>
                         </a>
 
                         <a href="#" class="dropdown-item" data-toggle="modal" data-target="#create_link">
-                            <i class="fa fa-fw fa-circle fa-sm mr-1" style="color: <?= language()->link->link->color ?>"></i>
+                            <i class="fa fa-fw fa-circle fa-sm mr-1" style="color: <?= $this->language->link->link->color ?>"></i>
 
-                            <?= language()->link->link->name ?>
+                            <?= $this->language->link->link->name ?>
                         </a>
                     </div>
                 </div>
             <?php else: ?>
                 <button type="button" data-toggle="modal" data-target="#create_biolink" class="btn btn-primary rounded-pill">
-                    <i class="fa fa-fw fa-plus-circle"></i> <?= language()->links->create ?>
+                    <i class="fa fa-fw fa-plus-circle"></i> <?= $this->language->links->create ?>
                 </button>
             <?php endif ?>
         </div>
@@ -38,10 +38,10 @@
 
                 <div class="dropdown-menu dropdown-menu-right filters-dropdown">
                     <div class="dropdown-header d-flex justify-content-between">
-                        <span class="h6 m-0"><?= language()->global->filters->header ?></span>
+                        <span class="h6 m-0"><?= $this->language->global->filters->header ?></span>
 
                         <?php if(count($data->filters->get)): ?>
-                            <a href="<?= url('links') ?>" class="text-muted"><?= language()->global->filters->reset ?></a>
+                            <a href="<?= url('links') ?>" class="text-muted"><?= $this->language->global->filters->reset ?></a>
                         <?php endif ?>
                     </div>
 
@@ -49,30 +49,30 @@
 
                     <form action="<?= url('links') ?>" method="get" role="form">
                         <div class="form-group px-4">
-                            <label for="search" class="small"><?= language()->global->filters->search ?></label>
-                            <input type="search" name="search" id="search" class="form-control form-control-sm" value="<?= $data->filters->search ?>" />
+                            <label for="search" class="small"><?= $this->language->global->filters->search ?></label>
+                            <input type="text" name="search" id="search" class="form-control form-control-sm" value="<?= $data->filters->search ?>" />
                         </div>
 
                         <div class="form-group px-4">
-                            <label for="search_by" class="small"><?= language()->global->filters->search_by ?></label>
+                            <label for="search_by" class="small"><?= $this->language->global->filters->search_by ?></label>
                             <select name="search_by" id="search_by" class="form-control form-control-sm">
-                                <option value="url" <?= $data->filters->search_by == 'url' ? 'selected="selected"' : null ?>><?= language()->links->filters->search_by_url ?></option>
+                                <option value="url" <?= $data->filters->search_by == 'url' ? 'selected="selected"' : null ?>><?= $this->language->links->filters->search_by_url ?></option>
                             </select>
                         </div>
 
                         <div class="form-group px-4">
-                            <label for="is_enabled" class="small"><?= language()->global->filters->status ?></label>
+                            <label for="is_enabled" class="small"><?= $this->language->global->filters->status ?></label>
                             <select name="is_enabled" id="is_enabled" class="form-control form-control-sm">
-                                <option value=""><?= language()->global->filters->all ?></option>
-                                <option value="1" <?= isset($data->filters->filters['is_enabled']) && $data->filters->filters['is_enabled'] == '1' ? 'selected="selected"' : null ?>><?= language()->global->active ?></option>
-                                <option value="0" <?= isset($data->filters->filters['is_enabled']) && $data->filters->filters['is_enabled'] == '0' ? 'selected="selected"' : null ?>><?= language()->global->disabled ?></option>
+                                <option value=""><?= $this->language->global->filters->all ?></option>
+                                <option value="1" <?= isset($data->filters->filters['is_enabled']) && $data->filters->filters['is_enabled'] == '1' ? 'selected="selected"' : null ?>><?= $this->language->global->active ?></option>
+                                <option value="0" <?= isset($data->filters->filters['is_enabled']) && $data->filters->filters['is_enabled'] == '0' ? 'selected="selected"' : null ?>><?= $this->language->global->disabled ?></option>
                             </select>
                         </div>
 
                         <div class="form-group px-4">
-                            <label for="project_id" class="small"><?= language()->links->filters->project_id ?></label>
+                            <label for="project_id" class="small"><?= $this->language->links->filters->project_id ?></label>
                             <select name="project_id" id="project_id" class="form-control form-control-sm">
-                                <option value=""><?= language()->global->filters->all ?></option>
+                                <option value=""><?= $this->language->global->filters->all ?></option>
                                 <?php foreach($data->projects as $row): ?>
                                     <option value="<?= $row->project_id ?>" <?= isset($data->filters->filters['project_id']) && $data->filters->filters['project_id'] == $row->project_id ? 'selected="selected"' : null ?>><?= $row->name ?></option>
                                 <?php endforeach ?>
@@ -80,33 +80,33 @@
                         </div>
 
                         <div class="form-group px-4">
-                            <label for="type" class="small"><?= language()->links->filters->type ?></label>
+                            <label for="type" class="small"><?= $this->language->links->filters->type ?></label>
                             <select name="type" id="type" class="form-control form-control-sm">
-                                <option value=""><?= language()->global->filters->all ?></option>
-                                <option value="biolink" <?= isset($data->filters->filters['type']) && $data->filters->filters['type'] == 'biolink' ? 'selected="selected"' : null ?>><?= language()->links->filters->type_biolink ?></option>
-                                <option value="link" <?= isset($data->filters->filters['type']) && $data->filters->filters['type'] == 'link' ? 'selected="selected"' : null ?>><?= language()->links->filters->type_link ?></option>
+                                <option value=""><?= $this->language->global->filters->all ?></option>
+                                <option value="biolink" <?= isset($data->filters->filters['type']) && $data->filters->filters['type'] == 'biolink' ? 'selected="selected"' : null ?>><?= $this->language->links->filters->type_biolink ?></option>
+                                <option value="link" <?= isset($data->filters->filters['type']) && $data->filters->filters['type'] == 'link' ? 'selected="selected"' : null ?>><?= $this->language->links->filters->type_link ?></option>
                             </select>
                         </div>
 
                         <div class="form-group px-4">
-                            <label for="order_by" class="small"><?= language()->global->filters->order_by ?></label>
+                            <label for="order_by" class="small"><?= $this->language->global->filters->order_by ?></label>
                             <select name="order_by" id="order_by" class="form-control form-control-sm">
-                                <option value="date" <?= $data->filters->order_by == 'date' ? 'selected="selected"' : null ?>><?= language()->global->filters->order_by_datetime ?></option>
-                                <option value="clicks" <?= $data->filters->order_by == 'clicks' ? 'selected="selected"' : null ?>><?= language()->links->filters->order_by_clicks ?></option>
-                                <option value="url" <?= $data->filters->order_by == 'url' ? 'selected="selected"' : null ?>><?= language()->links->filters->order_by_url ?></option>
+                                <option value="date" <?= $data->filters->order_by == 'date' ? 'selected="selected"' : null ?>><?= $this->language->global->filters->order_by_datetime ?></option>
+                                <option value="clicks" <?= $data->filters->order_by == 'clicks' ? 'selected="selected"' : null ?>><?= $this->language->links->filters->order_by_clicks ?></option>
+                                <option value="url" <?= $data->filters->order_by == 'url' ? 'selected="selected"' : null ?>><?= $this->language->links->filters->order_by_url ?></option>
                             </select>
                         </div>
 
                         <div class="form-group px-4">
-                            <label for="order_type" class="small"><?= language()->global->filters->order_type ?></label>
+                            <label for="order_type" class="small"><?= $this->language->global->filters->order_type ?></label>
                             <select name="order_type" id="order_type" class="form-control form-control-sm">
-                                <option value="ASC" <?= $data->filters->order_type == 'ASC' ? 'selected="selected"' : null ?>><?= language()->global->filters->order_type_asc ?></option>
-                                <option value="DESC" <?= $data->filters->order_type == 'DESC' ? 'selected="selected"' : null ?>><?= language()->global->filters->order_type_desc ?></option>
+                                <option value="ASC" <?= $data->filters->order_type == 'ASC' ? 'selected="selected"' : null ?>><?= $this->language->global->filters->order_type_asc ?></option>
+                                <option value="DESC" <?= $data->filters->order_type == 'DESC' ? 'selected="selected"' : null ?>><?= $this->language->global->filters->order_type_desc ?></option>
                             </select>
                         </div>
 
                         <div class="form-group px-4">
-                            <label for="results_per_page" class="small"><?= language()->global->filters->results_per_page ?></label>
+                            <label for="results_per_page" class="small"><?= $this->language->global->filters->results_per_page ?></label>
                             <select name="results_per_page" id="results_per_page" class="form-control form-control-sm">
                                 <?php foreach($data->filters->allowed_results_per_page as $key): ?>
                                     <option value="<?= $key ?>" <?= $data->filters->results_per_page == $key ? 'selected="selected"' : null ?>><?= $key ?></option>
@@ -115,7 +115,7 @@
                         </div>
 
                         <div class="form-group px-4 mt-4">
-                            <button type="submit" class="btn btn-sm btn-primary btn-block"><?= language()->global->submit ?></button>
+                            <button type="submit" class="btn btn-sm btn-primary btn-block"><?= $this->language->global->submit ?></button>
                         </div>
                     </form>
 
@@ -134,9 +134,9 @@
                 <div class="col-8 col-lg-5">
                     <div class="d-flex align-items-center">
                         <div class="mr-3 d-flex align-items-center">
-                            <span class="fa-stack fa-1x" data-toggle="tooltip" title="<?= language()->link->{$row->type}->name ?>">
-                                <i class="fa fa-circle fa-stack-2x" style="color: <?= language()->link->{$row->type}->color ?>"></i>
-                                <i class="fas <?= language()->link->{$row->type}->icon ?> fa-stack-1x fa-inverse"></i>
+                            <span class="fa-stack fa-1x" data-toggle="tooltip" title="<?= $this->language->link->{$row->type}->name ?>">
+                                <i class="fa fa-circle fa-stack-2x" style="color: <?= $this->language->link->{$row->type}->color ?>"></i>
+                                <i class="fas <?= $this->language->link->{$row->type}->icon ?> fa-stack-1x fa-inverse"></i>
                             </span>
                         </div>
 
@@ -162,27 +162,25 @@
                 <div class="col col-lg-3 d-none d-lg-flex flex-lg-row justify-content-lg-between align-items-center">
                     <div>
                         <?php if($row->project_id): ?>
-                            <a href="<?= url('links?project_id=' . $row->project_id) ?>" class="text-decoration-none">
-                                <span class="py-1 px-2 border rounded text-muted small" style="border-color: <?= $data->projects[$row->project_id]->color ?> !important;">
-                                    <?= $data->projects[$row->project_id]->name ?>
-                                </span>
+                            <a href="<?= url('links?project_id=' . $row->project_id) ?>">
+                                <span class="badge badge-primary"><?= $data->projects[$row->project_id]->name ?></span>
                             </a>
                         <?php endif ?>
                     </div>
 
                     <div>
                         <a href="<?= url('link/' . $row->link_id . '/statistics') ?>">
-                            <span data-toggle="tooltip" title="<?= language()->links->clicks ?>"><span class="badge badge-light"><i class="fa fa-fw fa-sm fa-chart-bar mr-1"></i> <?= nr($row->clicks) ?></span></span>
+                            <span data-toggle="tooltip" title="<?= $this->language->links->clicks ?>"><span class="badge badge-light"><i class="fa fa-fw fa-sm fa-chart-bar mr-1"></i> <?= nr($row->clicks) ?></span></span>
                         </a>
                     </div>
                 </div>
 
                 <div class="col col-lg-2 d-none d-lg-flex justify-content-lg-end align-items-center">
-                    <small class="text-muted" data-toggle="tooltip" title="<?= language()->links->datetime ?>"><i class="fa fa-fw fa-calendar-alt fa-sm mr-1"></i> <span class="align-middle"><?= \Altum\Date::get($row->date, 2) ?></span></small>
+                    <small class="text-muted" data-toggle="tooltip" title="<?= $this->language->links->date ?>"><i class="fa fa-fw fa-calendar-alt fa-sm mr-1"></i> <span class="align-middle"><?= \Altum\Date::get($row->date, 2) ?></span></small>
                 </div>
 
                 <div class="col-2 col-lg-1 d-flex justify-content-center justify-content-lg-end align-items-center">
-                    <div class="custom-control custom-switch" data-toggle="tooltip" title="<?= language()->links->is_enabled_tooltip ?>">
+                    <div class="custom-control custom-switch" data-toggle="tooltip" title="<?= $this->language->links->is_enabled_tooltip ?>">
                         <input
                                 type="checkbox"
                                 class="custom-control-input"
@@ -201,10 +199,10 @@
                             <i class="fa fa-ellipsis-v"></i>
 
                             <div class="dropdown-menu dropdown-menu-right">
-                                <a href="<?= url('link/' . $row->link_id) ?>" class="dropdown-item"><i class="fa fa-fw fa-pencil-alt"></i> <?= language()->global->edit ?></a>
-                                <a href="<?= url('link/' . $row->link_id . '/statistics') ?>" class="dropdown-item"><i class="fa fa-fw fa-chart-bar"></i> <?= language()->link->statistics->link ?></a>
-                                <a href="<?= $row->full_url . '/qr' ?>" target="_blank" class="dropdown-item"><i class="fa fa-fw fa-qrcode"></i> <?= language()->link->qr->link ?></a>
-                                <a href="#" class="dropdown-item" data-delete="<?= language()->global->info_message->confirm_delete ?>" data-row-id="<?= $row->link_id ?>"><i class="fa fa-fw fa-times"></i> <?= language()->global->delete ?></a>
+                                <a href="<?= url('link/' . $row->link_id) ?>" class="dropdown-item"><i class="fa fa-fw fa-pencil-alt"></i> <?= $this->language->global->edit ?></a>
+                                <a href="<?= url('link/' . $row->link_id . '/statistics') ?>" class="dropdown-item"><i class="fa fa-fw fa-chart-bar"></i> <?= $this->language->link->statistics->link ?></a>
+                                <a href="<?= $row->full_url . '/qr' ?>" target="_blank" class="dropdown-item"><i class="fa fa-fw fa-qrcode"></i> <?= $this->language->link->qr->link ?></a>
+                                <a href="#" class="dropdown-item" data-delete="<?= $this->language->global->info_message->confirm_delete ?>" data-row-id="<?= $row->link_id ?>"><i class="fa fa-fw fa-times"></i> <?= $this->language->global->delete ?></a>
                             </div>
                         </a>
                     </div>
@@ -218,8 +216,8 @@
 <?php else: ?>
 
     <div class="d-flex flex-column align-items-center justify-content-center mt-5">
-        <img src="<?= SITE_URL . ASSETS_URL_PATH . 'images/no_rows.svg' ?>" class="col-10 col-md-6 col-lg-4 mb-4" alt="<?= language()->links->no_data ?>" />
-        <h2 class="h4 text-muted mb-4"><?= language()->links->no_data ?></h2>
+        <img src="<?= SITE_URL . ASSETS_URL_PATH . 'images/no_rows.svg' ?>" class="col-10 col-md-6 col-lg-4 mb-4" alt="<?= $this->language->links->no_data ?>" />
+        <h2 class="h4 text-muted mb-4"><?= $this->language->links->no_data ?></h2>
     </div>
 
 <?php endif ?>

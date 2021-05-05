@@ -123,6 +123,6 @@ const set_cookie = (name, value, days, path) => {
     document.cookie = `${name}=${value};path=${path};expires=${d.toGMTString()}`;
 };
 
-let delete_cookie = (name, path) => {
-    set_cookie(name, '', -1, path);
+let delete_cookie = name => {
+    set_cookie(name, '', -1);
 };

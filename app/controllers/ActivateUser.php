@@ -2,7 +2,6 @@
 
 namespace Altum\Controllers;
 
-use Altum\Alerts;
 use Altum\Database\Database;
 use Altum\Logger;
 
@@ -10,8 +9,8 @@ class ActivateUser extends Controller {
 
     public function index() {
 
-        $md5email = isset($_GET['email']) ? $_GET['email'] : null;
-        $email_activation_code = isset($_GET['email_activation_code']) ? $_GET['email_activation_code'] : null;
+        $md5email = isset($_GET['email']) ? $_GET['email'] : false;
+        $email_activation_code = isset($_GET['email_activation_code']) ? $_GET['email_activation_code'] : false;
         $type = isset($_GET['type']) && in_array($_GET['type'], ['user_activation', 'user_pending_email']) ? $_GET['type'] : 'user_activation';
 
         $redirect = 'dashboard';
@@ -25,47 +24,39 @@ class ActivateUser extends Controller {
         switch($type) {
             case 'user_activation':
 
-                if(!$user = db()->where('email_activation_code', $email_activation_code)->getOne('users', ['user_id', 'email', 'name'])) {
-                    redirect();
-                }
+                if(!$profile_account = Database::get(['user_id', 'email', 'name'], 'users', ['email_activation_code' => $email_activation_code])) redirect();
 
-                if(md5($user->email) != $md5email) {
-                    redirect();
-                }
+                if(md5($profile_account->email) != $md5email) redirect();
 
-                $last_user_agent = Database::clean_string($_SERVER['HTTP_USER_AGENT']);
+                $user_agent = Database::clean_string($_SERVER['HTTP_USER_AGENT']);
 
                 /* Activate the account and reset the email_activation_code */
-                db()->where('user_id', $user->user_id)->update('users', [
-                    'active' => 1,
-                    'email_activation_code' => null,
-                    'last_user_agent' => $last_user_agent,
-                    'total_logins' => db()->inc()
-                ]);
+                $stmt = Database::$database->prepare("UPDATE `users` SET `active` = 1, `email_activation_code` = NULL, `last_user_agent` = ?, `total_logins` = `total_logins` + 1 WHERE `user_id` = ?");
+                $stmt->bind_param('ss', $user_agent, $profile_account->user_id);
+                $stmt->execute();
+                $stmt->close();
 
                 /* Send webhook notification if needed */
-                if(settings()->webhooks->user_new) {
+                if($this->settings->webhooks->user_new) {
 
-                    \Unirest\Request::post(settings()->webhooks->user_new, [], [
-                        'user_id' => $user->user_id,
-                        'email' => $user->email,
-                        'name' => $user->name
+                    \Unirest\Request::post($this->settings->webhooks->user_new, [], [
+                        'user_id' => $profile_account->user_id,
+                        'email' => $profile_account->email,
+                        'name' => $profile_account->name
                     ]);
 
                 }
 
-                Logger::users($user->user_id, 'activate.success');
+                Logger::users($profile_account->user_id, 'activate.success');
 
                 /* Login and set a successful message */
-                $_SESSION['user_id'] = $user->user_id;
+                $_SESSION['user_id'] = $profile_account->user_id;
+                $_SESSION['success'][] = $this->language->activate_user->user_activation;
 
-                /* Set a nice success message */
-                Alerts::add_success(language()->activate_user->user_activation);
-
-                Logger::users($user->user_id, 'login.success');
+                Logger::users($profile_account->user_id, 'login.success');
 
                 /* Clear the cache */
-                \Altum\Cache::$adapter->deleteItemsByTag('user_id=' . $user->user_id);
+                \Altum\Cache::$adapter->deleteItemsByTag('user_id=' . $profile_account->user_id);
 
                 redirect($redirect);
 
@@ -73,28 +64,22 @@ class ActivateUser extends Controller {
 
             case 'user_pending_email':
 
-                if(!$user = db()->where('email_activation_code', $email_activation_code)->getOne('users', ['user_id', 'pending_email'])) {
-                    redirect();
-                }
+                if(!$profile_account = Database::get(['user_id', 'pending_email'], 'users', ['email_activation_code' => $email_activation_code])) redirect();
 
-                if(md5($user->pending_email) != $md5email) {
-                    redirect();
-                }
+                if(md5($profile_account->pending_email) != $md5email) redirect();
 
                 /* Confirm the new email address and reset the email_activation_code */
-                db()->where('user_id', $user->user_id)->update('users', [
-                    'email' => $user->pending_email,
-                    'pending_email' => null,
-                    'email_activation_code' => null,
-                ]);
+                $stmt = Database::$database->prepare("UPDATE `users` SET `email` = ?, `pending_email` = NULL, `email_activation_code` = NULL WHERE `user_id` = ?");
+                $stmt->bind_param('ss', $profile_account->pending_email, $profile_account->user_id);
+                $stmt->execute();
+                $stmt->close();
 
-                Logger::users($user->user_id, 'email_change.success');
+                Logger::users($profile_account->user_id, 'email_change.success');
 
-                /* Set a nice success message */
-                Alerts::add_success(language()->activate_user->user_pending_email);
+                $_SESSION['success'][] = $this->language->activate_user->user_pending_email;
 
                 /* Clear the cache */
-                \Altum\Cache::$adapter->deleteItemsByTag('user_id=' . $user->user_id);
+                \Altum\Cache::$adapter->deleteItemsByTag('user_id=' . $profile_account->user_id);
 
                 redirect('account');
 

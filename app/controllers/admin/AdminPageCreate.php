@@ -2,13 +2,15 @@
 
 namespace Altum\Controllers;
 
-use Altum\Alerts;
 use Altum\Database\Database;
 use Altum\Middlewares\Csrf;
+use Altum\Middlewares\Authentication;
 
 class AdminPageCreate extends Controller {
 
     public function index() {
+
+        Authentication::guard('admin');
 
         if(!empty($_POST)) {
             /* Filter some the variables */
@@ -30,51 +32,42 @@ class AdminPageCreate extends Controller {
                     break;
             }
 
-            /* Check for any errors */
             $required_fields = ['title', 'url'];
+
+            /* Check for the required fields */
             foreach($required_fields as $field) {
                 if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]))) {
-                    Alerts::add_field_error($field, language()->global->error_message->empty_field);
+                    $_SESSION['error'][] = $this->language->global->error_message->empty_fields;
+                    break 1;
                 }
             }
 
             if(!Csrf::check()) {
-                Alerts::add_error(language()->global->error_message->invalid_csrf_token);
+                $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
             }
 
-            /* If there are no errors, continue */
-            if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
-
-                /* Database query */
-                db()->insert('pages', [
-                    'pages_category_id' => $_POST['pages_category_id'],
-                    'url' => $_POST['url'],
-                    'title' => $_POST['title'],
-                    'description' => $_POST['description'],
-                    'content' => $_POST['content'],
-                    'type' => $_POST['type'],
-                    'position' => $_POST['position'],
-                    'order' => $_POST['order'],
-                    'date' => \Altum\Date::$date,
-                    'last_date' => \Altum\Date::$date,
-                ]);
+            /* If there are no errors continue the updating process */
+            if(empty($_SESSION['error'])) {
+                $stmt = Database::$database->prepare("INSERT INTO `pages` (`pages_category_id`, `url`, `title`, `description`, `content`, `type`, `position`, `order`, `date`, `last_date`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param('ssssssssss', $_POST['pages_category_id'], $_POST['url'], $_POST['title'], $_POST['description'], $_POST['content'], $_POST['type'], $_POST['position'], $_POST['order'], \Altum\Date::$date, \Altum\Date::$date);
+                $stmt->execute();
+                $stmt->close();
 
                 /* Clear cache */
                 \Altum\Cache::$adapter->deleteItem('pages_' . $_POST['position']);
 
                 /* Set a nice success message */
-                Alerts::add_success(language()->global->success_message->basic);
-
+                $_SESSION['success'][] = $this->language->global->success_message->basic;
                 redirect('admin/pages');
             }
 
         }
 
         /* Get the pages categories available */
-        $pages_categories = db()->get('pages_categories', null, ['pages_category_id', 'title']);
+        $pages_categories_result = $this->database->query("SELECT `pages_category_id`, `title` FROM `pages_categories`");
 
         /* Main View */
-        $data = ['pages_categories' => $pages_categories];
+        $data = ['pages_categories_result' => $pages_categories_result];
 
         $view = new \Altum\Views\View('admin/page-create/index', (array) $this);
 

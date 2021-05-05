@@ -2,14 +2,18 @@
 
 namespace Altum\Controllers;
 
-use Altum\Alerts;
+use Altum\Database\Database;
 use Altum\Logger;
 use Altum\Middlewares\Csrf;
+use Altum\Models\Plan;
+use Altum\Middlewares\Authentication;
 use Altum\Models\User;
 
 class AdminUserCreate extends Controller {
 
     public function index() {
+
+        Authentication::guard('admin');
 
         /* Default variables */
         $values = [
@@ -29,32 +33,36 @@ class AdminUserCreate extends Controller {
             $values['email'] = $_POST['email'];
             $values['password'] = $_POST['password'];
 
-            /* Check for any errors */
+            /* Define some variables */
             $required_fields = ['name', 'email' ,'password'];
+
+            /* Check for the required fields */
             foreach($required_fields as $field) {
                 if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]))) {
-                    Alerts::add_field_error($field, language()->global->error_message->empty_field);
+                    $_SESSION['error'][] = $this->language->global->error_message->empty_fields;
+                    break 1;
                 }
             }
 
             if(!Csrf::check()) {
-                Alerts::add_error(language()->global->error_message->invalid_csrf_token);
-            }
-            if(strlen($_POST['name']) < 3 || strlen($_POST['name']) > 32) {
-                Alerts::add_field_error('name', language()->admin_users->error_message->name_length);
-            }
-            if(db()->where('email', $_POST['email'])->has('users')) {
-                Alerts::add_field_error('email', language()->admin_users->error_message->email_exists);
-            }
-            if(!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
-                Alerts::add_field_error('email', language()->admin_users->error_message->invalid_email);
-            }
-            if(strlen(trim($_POST['password'])) < 6) {
-                Alerts::add_field_error('password', language()->admin_users->error_message->short_password);
+                $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
             }
 
-            /* If there are no errors, continue */
-            if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
+            if(strlen($_POST['name']) < 3 || strlen($_POST['name']) > 32) {
+                $_SESSION['error'][] = $this->language->admin_user_create->error_message->name_length;
+            }
+            if(Database::exists('user_id', 'users', ['email' => $_POST['email']])) {
+                $_SESSION['error'][] = $this->language->admin_user_create->error_message->email_exists;
+            }
+            if(!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
+                $_SESSION['error'][] = $this->language->admin_user_create->error_message->invalid_email;
+            }
+            if(strlen(trim($_POST['password'])) < 6) {
+                $_SESSION['error'][] = $this->language->admin_user_create->error_message->short_password;
+            }
+
+            /* If there are no errors continue the registering process */
+            if(empty($_SESSION['error'])) {
 
                 $registered_user_id = (new User())->create(
                     $_POST['email'],
@@ -64,17 +72,17 @@ class AdminUserCreate extends Controller {
                     null,
                     null,
                     'free',
-                    json_encode(settings()->plan_free->settings),
+                    json_encode($this->settings->plan_free->settings),
                     null,
-                    settings()->default_timezone,
+                    $this->settings->default_timezone,
                     true
                 );
 
                 /* Log the action */
-                Logger::users($registered_user_id, 'register.success');
+                Logger::users($registered_user_id, 'register.admin_register');
 
                 /* Success message */
-                Alerts::add_success(language()->admin_user_create->success_message->created);
+                $_SESSION['success'][] = $this->language->admin_user_create->success_message->created;
 
                 /* Redirect */
                 redirect('admin/user-update/' . $registered_user_id);

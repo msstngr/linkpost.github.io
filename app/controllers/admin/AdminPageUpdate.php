@@ -2,18 +2,20 @@
 
 namespace Altum\Controllers;
 
-use Altum\Alerts;
 use Altum\Database\Database;
 use Altum\Middlewares\Csrf;
+use Altum\Middlewares\Authentication;
 
 class AdminPageUpdate extends Controller {
 
     public function index() {
 
-        $page_id = isset($this->params[0]) ? (int) $this->params[0] : null;
+        Authentication::guard('admin');
+
+        $page_id = (isset($this->params[0])) ? $this->params[0] : false;
 
         /* Check if user exists */
-        if(!$page = db()->where('page_id', $page_id)->getOne('pages')) {
+        if(!$page = Database::get('*', 'pages', ['page_id' => $page_id])) {
             redirect('admin/pages');
         }
 
@@ -37,41 +39,34 @@ class AdminPageUpdate extends Controller {
                     break;
             }
 
-            /* Check for any errors */
             $required_fields = ['title', 'url'];
+
+            /* Check for the required fields */
             foreach($required_fields as $field) {
                 if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]))) {
-                    Alerts::add_field_error($field, language()->global->error_message->empty_field);
+                    $_SESSION['error'][] = $this->language->global->error_message->empty_fields;
+                    break 1;
                 }
             }
 
             if(!Csrf::check()) {
-                Alerts::add_error(language()->global->error_message->invalid_csrf_token);
+                $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
             }
 
-            /* If there are no errors, continue */
-            if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
-
-                /* Database query */
-                db()->where('page_id', $page->page_id)->update('pages', [
-                    'pages_category_id' => $_POST['pages_category_id'],
-                    'url' => $_POST['url'],
-                    'title' => $_POST['title'],
-                    'description' => $_POST['description'],
-                    'content' => $_POST['content'],
-                    'type' => $_POST['type'],
-                    'position' => $_POST['position'],
-                    'order' => $_POST['order'],
-                    'last_date' => \Altum\Date::$date,
-                ]);
+            if(empty($_SESSION['error'])) {
+                /* Update the database */
+                $stmt = Database::$database->prepare("UPDATE `pages` SET  `pages_category_id` = ?, `url` = ?, `title` = ?, `description` = ?, `content` = ?, `type` = ?, `position` = ?, `order` = ?, `last_date` = ? WHERE `page_id` = ?");
+                $stmt->bind_param('ssssssssss', $_POST['pages_category_id'], $_POST['url'], $_POST['title'], $_POST['description'], $_POST['content'], $_POST['type'], $_POST['position'], $_POST['order'], \Altum\Date::$date, $page->page_id);
+                $stmt->execute();
+                $stmt->close();
 
                 /* Clear cache */
                 \Altum\Cache::$adapter->deleteItems(['pages_hidden', 'pages_top', 'pages_bottom']);
 
                 /* Set a nice success message */
-                Alerts::add_success(language()->global->success_message->basic);
-
+                $_SESSION['success'][] = $this->language->global->success_message->basic;
                 redirect('admin/page-update/' . $page_id);
+
             }
         }
 
@@ -80,11 +75,11 @@ class AdminPageUpdate extends Controller {
         \Altum\Event::add_content($view->run(), 'modals');
 
         /* Get the pages categories available */
-        $pages_categories = db()->get('pages_categories', null, ['pages_category_id', 'title']);
+        $pages_categories_result = $this->database->query("SELECT `pages_category_id`, `title` FROM `pages_categories`");
 
         /* Main View */
         $data = [
-            'pages_categories' => $pages_categories,
+            'pages_categories_result' => $pages_categories_result,
             'page' => $page
         ];
 

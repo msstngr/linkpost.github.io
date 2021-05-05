@@ -2,8 +2,12 @@
 
 namespace Altum\Controllers;
 
+use Altum\Database\Database;
 use Altum\Middlewares\Authentication;
 use Altum\Models\Domain;
+use Altum\Models\Plan;
+use Altum\Routing\Router;
+use Altum\Title;
 
 class Dashboard extends Controller {
 
@@ -15,11 +19,11 @@ class Dashboard extends Controller {
         $filters = (new \Altum\Filters(['is_enabled', 'type'], ['url'], ['date', 'clicks', 'url']));
 
         /* Prepare the paginator */
-        $total_rows = database()->query("SELECT COUNT(*) AS `total` FROM `links` WHERE `user_id` = {$this->user->user_id} AND (`subtype` = 'base' OR `subtype` = '')")->fetch_object()->total ?? 0;
+        $total_rows = Database::$database->query("SELECT COUNT(*) AS `total` FROM `links` WHERE `user_id` = {$this->user->user_id} AND (`subtype` = 'base' OR `subtype` = '')")->fetch_object()->total ?? 0;
         $paginator = (new \Altum\Paginator($total_rows, 25, $_GET['page'] ?? 1, url('links?' . $filters->get_get() . '&page=%d')));
 
         /* Get the links list for the project */
-        $links_result = database()->query("
+        $links_result = Database::$database->query("
             SELECT 
                 `links`.*, `domains`.`scheme`, `domains`.`host`
             FROM 
@@ -51,7 +55,7 @@ class Dashboard extends Controller {
             $start_date_query = (new \DateTime())->modify('-30 day')->format('Y-m-d H:i:s');
             $end_date_query = (new \DateTime())->modify('+1 day')->format('Y-m-d H:i:s');
 
-            $track_links_result = database()->query("
+            $track_links_result = Database::$database->query("
                 SELECT
                     COUNT(`id`) AS `pageviews`,
                     SUM(`is_unique`) AS `visitors`,
@@ -83,15 +87,15 @@ class Dashboard extends Controller {
         }
 
         /* Some statistics for the widgets */
-        if(settings()->links->domains_is_enabled) {
-            $domains_total = database()->query("SELECT COUNT(*) AS `total` FROM `domains` WHERE `user_id` = {$this->user->user_id} AND `type` = 0")->fetch_object()->total;
+        if($this->settings->links->domains_is_enabled) {
+            $domains_total = Database::$database->query("SELECT COUNT(*) AS `total` FROM `domains` WHERE `user_id` = {$this->user->user_id} AND `type` = 0")->fetch_object()->total;
         }
 
-        $projects_total = database()->query("SELECT COUNT(*) AS `total` FROM `projects` WHERE `user_id` = {$this->user->user_id}")->fetch_object()->total;
-        $links_total = database()->query("SELECT COUNT(*) AS `total` FROM `links` WHERE `user_id` = {$this->user->user_id}")->fetch_object()->total;
+        $projects_total = Database::$database->query("SELECT COUNT(*) AS `total` FROM `projects` WHERE `user_id` = {$this->user->user_id}")->fetch_object()->total;
+        $links_total = Database::$database->query("SELECT COUNT(*) AS `total` FROM `links` WHERE `user_id` = {$this->user->user_id}")->fetch_object()->total;
 
         /* Get statistics based on the total clicks */
-        $links_clicks_total = database()->query("SELECT SUM(`clicks`) AS `total` FROM `links` WHERE `user_id` = {$this->user->user_id}")->fetch_object()->total;
+        $links_clicks_total = Database::$database->query("SELECT SUM(`clicks`) AS `total` FROM `links` WHERE `user_id` = {$this->user->user_id}")->fetch_object()->total;
 
         /* Create Link Modal */
         $domains = (new Domain())->get_domains($this->user);

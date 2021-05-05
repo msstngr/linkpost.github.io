@@ -14,17 +14,17 @@
             <div class="notification-container"></div>
 
             <div class="form-group">
-                <label><i class="fa fa-fw fa-signature fa-sm mr-1"></i> <?= language()->link->settings->location_url ?></label>
-                <input type="text" class="form-control" name="location_url" value="<?= $data->link->location_url ?>" required="required" placeholder="<?= language()->link->settings->location_url_placeholder ?>" />
+                <label><i class="fa fa-fw fa-signature fa-sm mr-1"></i> <?= $this->language->link->settings->location_url ?></label>
+                <input type="text" class="form-control" name="location_url" value="<?= $data->link->location_url ?>" required="required" placeholder="<?= $this->language->link->settings->location_url_placeholder ?>" />
             </div>
 
             <div class="form-group">
-                <label><i class="fa fa-fw fa-link fa-sm mr-1"></i> <?= language()->link->settings->url ?></label>
+                <label><i class="fa fa-fw fa-link fa-sm mr-1"></i> <?= $this->language->link->settings->url ?></label>
                 <div class="input-group">
                     <div class="input-group-prepend">
                         <?php if(count($data->domains)): ?>
                             <select name="domain_id" class="appearance-none select-custom-altum form-control input-group-text">
-                                <?php if(settings()->links->main_domain_is_enabled || \Altum\Middlewares\Authentication::is_admin()): ?>
+                                <?php if($this->settings->links->main_domain_is_enabled || \Altum\Middlewares\Authentication::is_admin()): ?>
                                     <option value="" <?= $data->link->domain ? 'selected="selected"' : null ?>><?= url() ?></option>
                                 <?php endif ?>
 
@@ -41,26 +41,26 @@
                         type="text"
                         class="form-control"
                         name="url"
-                        placeholder="<?= language()->link->settings->url_placeholder ?>"
+                        placeholder="<?= $this->language->link->settings->url_placeholder ?>"
                         value="<?= $data->link->url ?>"
                         <?= !$this->user->plan_settings->custom_url ? 'readonly="readonly"' : null ?>
-                        <?= $this->user->plan_settings->custom_url ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>
+                        <?= $this->user->plan_settings->custom_url ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>
                     />
                 </div>
-                <small class="form-text text-muted"><?= language()->link->settings->url_help ?></small>
+                <small class="form-text text-muted"><?= $this->language->link->settings->url_help ?></small>
             </div>
 
             <div class="form-group">
-                <label for="settings_project_id"><i class="fa fa-fw fa-project-diagram fa-sm mr-1"></i> <?= language()->link->settings->project_id ?></label>
+                <label for="settings_project_id"><i class="fa fa-fw fa-project-diagram fa-sm mr-1"></i> <?= $this->language->link->settings->project_id ?></label>
                 <select id="settings_project_id" name="project_id" class="form-control">
-                    <option value=""><?= language()->link->settings->project_id_null ?></option>
+                    <option value=""><?= $this->language->link->settings->project_id_null ?></option>
                     <?php foreach($data->projects as $row): ?>
                         <option value="<?= $row->project_id ?>" <?= $data->link->project_id == $row->project_id ? 'selected="selected"' : null?>><?= $row->name ?></option>
                     <?php endforeach ?>
                 </select>
             </div>
 
-            <div <?= $this->user->plan_settings->scheduling ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>>
+            <div <?= $this->user->plan_settings->scheduling ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>>
                 <div class="<?= $this->user->plan_settings->scheduling ? null : 'container-disabled' ?>">
                     <div class="custom-control custom-switch mb-3">
                         <input
@@ -71,25 +71,25 @@
                             <?= !empty($data->link->start_date) && !empty($data->link->end_date) ? 'checked="checked"' : null ?>
                             <?= $this->user->plan_settings->scheduling ? null : 'disabled="disabled"' ?>
                         >
-                        <label class="custom-control-label" for="schedule"><?= language()->link->settings->schedule ?></label>
-                        <small class="form-text text-muted"><?= language()->link->settings->schedule_help ?></small>
+                        <label class="custom-control-label" for="schedule"><?= $this->language->link->settings->schedule ?></label>
+                        <small class="form-text text-muted"><?= $this->language->link->settings->schedule_help ?></small>
                     </div>
                 </div>
             </div>
 
             <div id="schedule_container" style="display: none;">
-                <div <?= $this->user->plan_settings->scheduling ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>>
+                <div <?= $this->user->plan_settings->scheduling ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>>
                     <div class="<?= $this->user->plan_settings->scheduling ? null : 'container-disabled' ?>">
                         <div class="row">
                             <div class="col">
                                 <div class="form-group">
-                                    <label><i class="fa fa-fw fa-clock fa-sm mr-1"></i> <?= language()->link->settings->start_date ?></label>
+                                    <label><i class="fa fa-fw fa-clock fa-sm mr-1"></i> <?= $this->language->link->settings->start_date ?></label>
                                     <input
                                             type="text"
                                             class="form-control"
                                             name="start_date"
                                             value="<?= \Altum\Date::get($data->link->start_date, 1) ?>"
-                                            placeholder="<?= language()->link->settings->start_date ?>"
+                                            placeholder="<?= $this->language->link->settings->start_date ?>"
                                             autocomplete="off"
                                     >
                                 </div>
@@ -97,13 +97,13 @@
 
                             <div class="col">
                                 <div class="form-group">
-                                    <label><i class="fa fa-fw fa-clock fa-sm mr-1"></i> <?= language()->link->settings->end_date ?></label>
+                                    <label><i class="fa fa-fw fa-clock fa-sm mr-1"></i> <?= $this->language->link->settings->end_date ?></label>
                                     <input
                                             type="text"
                                             class="form-control"
                                             name="end_date"
                                             value="<?= \Altum\Date::get($data->link->end_date, 1) ?>"
-                                            placeholder="<?= language()->link->settings->end_date ?>"
+                                            placeholder="<?= $this->language->link->settings->end_date ?>"
                                             autocomplete="off"
                                     >
                                 </div>
@@ -113,17 +113,17 @@
                 </div>
             </div>
 
-            <div <?= $this->user->plan_settings->password ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>>
+            <div <?= $this->user->plan_settings->password ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>>
                 <div class="<?= $this->user->plan_settings->password ? null : 'container-disabled' ?>">
                     <div class="form-group">
-                        <label for="password"><i class="fa fa-fw fa-key fa-sm mr-1"></i> <?= language()->link->settings->password ?></label>
+                        <label for="password"><i class="fa fa-fw fa-key fa-sm mr-1"></i> <?= $this->language->link->settings->password ?></label>
                         <input id="password" type="password" class="form-control" name="qweasdzxc" value="<?= $data->link->settings->password ?>" autocomplete="off" <?= !$this->user->plan_settings->password ? 'disabled="disabled"': null ?> />
-                        <small class="form-text text-muted"><?= language()->link->settings->password_help ?></small>
+                        <small class="form-text text-muted"><?= $this->language->link->settings->password_help ?></small>
                     </div>
                 </div>
             </div>
 
-            <div <?= $this->user->plan_settings->sensitive_content ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>>
+            <div <?= $this->user->plan_settings->sensitive_content ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>>
                 <div class="<?= $this->user->plan_settings->sensitive_content ? null : 'container-disabled' ?>">
                     <div class="custom-control custom-switch mr-3 mb-3">
                         <input
@@ -134,14 +134,14 @@
                             <?= !$this->user->plan_settings->sensitive_content ? 'disabled="disabled"': null ?>
                             <?= $data->link->settings->sensitive_content ? 'checked="checked"' : null ?>
                         >
-                        <label class="custom-control-label clickable" for="sensitive_content"><?= language()->link->settings->sensitive_content ?></label>
-                        <small class="form-text text-muted"><?= language()->link->settings->sensitive_content_help ?></small>
+                        <label class="custom-control-label clickable" for="sensitive_content"><?= $this->language->link->settings->sensitive_content ?></label>
+                        <small class="form-text text-muted"><?= $this->language->link->settings->sensitive_content_help ?></small>
                     </div>
                 </div>
             </div>
 
             <div class="mt-4">
-                <button type="submit" name="submit" class="btn btn-block btn-primary"><?= language()->global->update ?></button>
+                <button type="submit" name="submit" class="btn btn-block btn-primary"><?= $this->language->global->update ?></button>
             </div>
         </form>
 

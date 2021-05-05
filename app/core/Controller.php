@@ -30,20 +30,20 @@ class Controller {
             return;
         }
 
-        if(Router::$path == 'l') {
-            $wrapper = new \Altum\Views\View('l/wrapper', (array) $this);
+        if(Router::$path == 'link') {
+            $wrapper = new \Altum\Views\View('link-path/wrapper', (array) $this);
         }
 
         if(Router::$path == '') {
             /* Get the top menu custom pages */
-            $pages = (new Page())->get_pages('top');
+            $pages = (new Page(['database' => $this->database]))->get_pages('top');
 
             /* Establish the menu view */
             $menu = new \Altum\Views\View('partials/menu', (array) $this);
             $this->add_view_content('menu', $menu->run([ 'pages' => $pages ]));
 
             /* Get the footer */
-            $pages = (new Page())->get_pages('bottom');
+            $pages = (new Page(['database' => $this->database]))->get_pages('bottom');
 
             /* Establish the footer view */
             $footer = new \Altum\Views\View('partials/footer', (array) $this);

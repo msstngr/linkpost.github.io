@@ -2,9 +2,9 @@
 
 namespace Altum\Controllers;
 
-use Altum\Alerts;
 use Altum\Database\Database;
 use Altum\Date;
+use Altum\Logger;
 use Altum\Middlewares\Authentication;
 use Altum\Middlewares\Csrf;
 use Altum\Models\User;
@@ -44,11 +44,11 @@ class Pay extends Controller {
 
         Authentication::guard();
 
-        if(!settings()->payment->is_enabled) {
+        if(!$this->settings->payment->is_enabled) {
             redirect();
         }
 
-        $this->plan_id = isset($this->params[0]) ? $this->params[0] : null;
+        $this->plan_id = isset($this->params[0]) ? $this->params[0] : false;
         $this->return_type = isset($_GET['return_type']) && in_array($_GET['return_type'], ['success', 'cancel']) ? $_GET['return_type'] : null;
         $this->payment_processor = isset($_GET['payment_processor']) && in_array($_GET['payment_processor'], ['paypal', 'stripe', 'offline_payment']) ? $_GET['payment_processor'] : null;
 
@@ -58,14 +58,14 @@ class Pay extends Controller {
             case 'free':
 
                 /* Get the current settings for the free plan */
-                $this->plan = settings()->plan_free;
+                $this->plan = $this->settings->plan_free;
 
                 break;
 
             case 'trial':
 
                 /* Get the current settings for the trial plan */
-                $this->plan = settings()->plan_trial;
+                $this->plan = $this->settings->plan_trial;
 
                 break;
 
@@ -74,7 +74,7 @@ class Pay extends Controller {
                 $this->plan_id = (int) $this->plan_id;
 
                 /* Check if plan exists */
-                $this->plan = (new \Altum\Models\Plan())->get_plan_by_id($this->plan_id);
+                $this->plan = (new \Altum\Models\Plan(['settings' => $this->settings]))->get_plan_by_id($this->plan_id);
 
                 if($this->plan->plan_id == 'custom') {
                     redirect('plan');
@@ -117,9 +117,9 @@ class Pay extends Controller {
         /* More checks depending on the user plan and what it has been chosen */
         if($this->plan_id == 'free') {
             if($this->user->plan_id == 'free') {
-                Alerts::add_info(language()->pay->free->free_already);
+                $_SESSION['info'][] = $this->language->pay->free->free_already;
             } else {
-                Alerts::add_info(language()->pay->free->other_plan_not_expired);
+                $_SESSION['info'][] = $this->language->pay->free->other_plan_not_expired;
             }
 
             redirect('plan');
@@ -127,7 +127,7 @@ class Pay extends Controller {
 
         elseif($this->plan_id == 'trial') {
             if($this->user->plan_trial_done) {
-                Alerts::add_info(language()->pay->trial->trial_done);
+                $_SESSION['info'][] = $this->language->pay->trial->trial_done;
                 redirect('plan');
             }
         }
@@ -138,7 +138,7 @@ class Pay extends Controller {
 
             /* Check for any errors */
             if(!Csrf::check()) {
-                Alerts::add_error(language()->global->error_message->invalid_csrf_token);
+                $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
             }
 
             switch($this->plan_id) {
@@ -176,7 +176,7 @@ class Pay extends Controller {
                         switch($_POST['payment_processor']) {
                             case 'paypal':
 
-                                if(!settings()->paypal->is_enabled) {
+                                if(!$this->settings->paypal->is_enabled) {
                                     redirect('pay/' . $this->plan_id);
                                 }
 
@@ -184,7 +184,7 @@ class Pay extends Controller {
 
                             case 'stripe':
 
-                                if(!settings()->stripe->is_enabled) {
+                                if(!$this->settings->stripe->is_enabled) {
                                     redirect('pay/' . $this->plan_id);
                                 }
 
@@ -192,7 +192,7 @@ class Pay extends Controller {
 
                             case 'offline_payment':
 
-                                if(!settings()->offline_payment->is_enabled) {
+                                if(!$this->settings->offline_payment->is_enabled) {
                                     redirect('pay/' . $this->plan_id);
                                 }
 
@@ -205,7 +205,7 @@ class Pay extends Controller {
                         redirect('pay/' . $this->plan_id);
                     }
 
-                    if(settings()->payment->taxes_and_billing_is_enabled && (empty($this->user->billing->name) || empty($this->user->billing->address) || empty($this->user->billing->city) || empty($this->user->billing->county) || empty($this->user->billing->zip))) {
+                    if($this->settings->payment->taxes_and_billing_is_enabled && (empty($this->user->billing->name) || empty($this->user->billing->address) || empty($this->user->billing->city) || empty($this->user->billing->county) || empty($this->user->billing->zip))) {
                         $_POST['billing_type'] = in_array($_POST['billing_type'], ['personal', 'business']) ? Database::clean_string($_POST['billing_type']) : 'personal';
                         $_POST['billing_name'] = trim(Database::clean_string($_POST['billing_name']));
                         $_POST['billing_address'] = trim(Database::clean_string($_POST['billing_address']));
@@ -228,12 +228,15 @@ class Pay extends Controller {
                         ]);
 
                         if(empty($_POST['billing_name']) || empty($_POST['billing_address']) || empty($_POST['billing_city']) || empty($_POST['billing_county']) || empty($_POST['billing_zip'])) {
-                            Alerts::add_info(language()->pay->custom_plan->billing_required);
+                            $_SESSION['info'][] = $this->language->pay->custom_plan->billing_required;
                             redirect('pay/' . $this->plan_id);
                         }
 
-                        /* Database query */
-                        db()->where('user_id', $this->user->user_id)->update('users', ['billing' => $_POST['billing']]);
+                        /* Prepare the statement and execute query */
+                        $stmt = Database::$database->prepare("UPDATE `users` SET `billing` = ? WHERE `user_id` = ?");
+                        $stmt->bind_param('ss', $_POST['billing'], $this->user->user_id);
+                        $stmt->execute();
+                        $stmt->close();
                     }
 
                     /* Lifetime */
@@ -249,7 +252,7 @@ class Pay extends Controller {
                     break;
             }
 
-            if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
+            if(empty($_SESSION['error'])) {
 
                 switch($this->plan_id) {
 
@@ -257,15 +260,9 @@ class Pay extends Controller {
 
                         /* Determine the expiration date of the plan */
                         $plan_expiration_date = (new \DateTime())->modify('+' . $this->plan->days . ' days')->format('Y-m-d H:i:s');
-                        $plan_settings = json_encode(settings()->plan_trial->settings);
+                        $plan_settings = json_encode($this->settings->plan_trial->settings);
 
-                        /* Database query */
-                        db()->where('user_id', $this->user->user_id)->update('users', [
-                            'plan_id' => 'trial',
-                            'plan_settings' => $plan_settings,
-                            'plan_expiration_date' => $plan_expiration_date,
-                            'plan_trial_done' => 1,
-                        ]);
+                        Database::$database->query("UPDATE `users` SET `plan_id` = 'trial', `plan_settings` = '{$plan_settings}', `plan_expiration_date` = '{$plan_expiration_date}', `plan_trial_done` = '1' WHERE `user_id` = {$this->user->user_id}");
 
                         /* Clear the cache */
                         \Altum\Cache::$adapter->deleteItemsByTag('user_id=' . $this->user->user_id);
@@ -280,13 +277,13 @@ class Pay extends Controller {
                         /* Check for code usage */
                         $this->code = false;
 
-                        if(settings()->payment->codes_is_enabled && isset($_POST['code'])) {
+                        if($this->settings->payment->codes_is_enabled && isset($_POST['code'])) {
 
                             $_POST['code'] = Database::clean_string($_POST['code']);
 
-                            $this->code = database()->query("SELECT `code_id`, `code`, `discount` FROM `codes` WHERE (`plan_id` IS NULL OR `plan_id` = '{$this->plan_id}') AND `code` = '{$_POST['code']}' AND `redeemed` < `quantity` AND `type` = 'discount'")->fetch_object();
+                            $this->code = $this->database->query("SELECT `code_id`, `code`, `discount` FROM `codes` WHERE (`plan_id` IS NULL OR `plan_id` = '{$this->plan_id}') AND `code` = '{$_POST['code']}' AND `redeemed` < `quantity` AND `type` = 'discount'")->fetch_object();
 
-                            if($this->code && db()->where('user_id', $this->user->user_id)->where('code_id', $this->code->code_id)->has('redeemed_codes')) {
+                            if($this->code && Database::exists('id', 'redeemed_codes', ['user_id' => $this->user->user_id, 'code_id' => $this->code->code_id])) {
                                 redirect('pay/' . $this->plan_id);
                             }
                         }
@@ -343,8 +340,8 @@ class Pay extends Controller {
     private function paypal_create() {
 
         /* Initiate paypal */
-        $paypal = new \PayPal\Rest\ApiContext(new \PayPal\Auth\OAuthTokenCredential(settings()->paypal->client_id, settings()->paypal->secret));
-        $paypal->setConfig(['mode' => settings()->paypal->mode]);
+        $paypal = new \PayPal\Rest\ApiContext(new \PayPal\Auth\OAuthTokenCredential($this->settings->paypal->client_id, $this->settings->paypal->secret));
+        $paypal->setConfig(['mode' => $this->settings->paypal->mode]);
 
         /* Payment details */
         $product = $this->plan->name;
@@ -370,7 +367,7 @@ class Pay extends Controller {
         $price = $this->calculate_price_with_taxes($price);
 
         /* Make sure the price is right depending on the currency */
-        $price = in_array(settings()->payment->currency, ['JPY', 'TWD', 'HUF']) ? number_format($price, 0, '.', '') : number_format($price, 2, '.', '');
+        $price = in_array($this->settings->payment->currency, ['JPY', 'TWD', 'HUF']) ? number_format($price, 0, '.', '') : number_format($price, 2, '.', '');
 
         switch($_POST['payment_type']) {
             case 'one_time':
@@ -382,7 +379,7 @@ class Pay extends Controller {
                 $flowConfig->setReturnUriHttpMethod('GET');
 
                 $presentation = new Presentation();
-                $presentation->setBrandName(settings()->payment->brand_name);
+                $presentation->setBrandName($this->settings->payment->brand_name);
 
                 $inputFields = new InputFields();
                 $inputFields->setAllowNote(true)
@@ -390,7 +387,7 @@ class Pay extends Controller {
                     ->setAddressOverride(0);
 
                 $webProfile = new WebProfile();
-                $webProfile->setName(settings()->payment->brand_name . uniqid())
+                $webProfile->setName($this->settings->payment->brand_name . uniqid())
                     ->setFlowConfig($flowConfig)
                     ->setPresentation($presentation)
                     ->setInputFields($inputFields)
@@ -409,7 +406,7 @@ class Pay extends Controller {
                         die();
                     } else {
 
-                        Alerts::add_error(language()->pay->error_message->failed_payment);
+                        $_SESSION['error'][] = $this->language->pay->error_message->failed_payment;
                         redirect('pay/' . $this->plan_id);
 
                     }
@@ -421,7 +418,7 @@ class Pay extends Controller {
 
                 $item = new Item();
                 $item->setName($product)
-                    ->setCurrency(settings()->payment->currency)
+                    ->setCurrency($this->settings->payment->currency)
                     ->setQuantity(1)
                     ->setPrice($price);
 
@@ -429,7 +426,7 @@ class Pay extends Controller {
                 $itemList->setItems([$item]);
 
                 $amount = new Amount();
-                $amount->setCurrency(settings()->payment->currency)
+                $amount->setCurrency($this->settings->payment->currency)
                     ->setTotal($price);
 
                 $transaction = new Transaction();
@@ -460,7 +457,7 @@ class Pay extends Controller {
                         die();
                     } else {
 
-                        Alerts::add_error(language()->pay->error_message->failed_payment);
+                        $_SESSION['error'][] = $this->language->pay->error_message->failed_payment;
                         redirect('pay/' . $this->plan_id);
 
                     }
@@ -486,7 +483,7 @@ class Pay extends Controller {
                     ->setFrequency($_POST['payment_frequency'] == 'monthly' ? 'Month' : 'Year')
                     ->setFrequencyInterval('1')
                     ->setCycles($_POST['payment_frequency'] == 'monthly' ? '60' : '5')
-                    ->setAmount(new Currency(['value' => $price, 'currency' => settings()->payment->currency]));
+                    ->setAmount(new Currency(['value' => $price, 'currency' => $this->settings->payment->currency]));
 
 
                 /* Set merchant preferences */
@@ -496,7 +493,7 @@ class Pay extends Controller {
                     ->setAutoBillAmount('yes')
                     ->setInitialFailAmountAction('CONTINUE')
                     ->setMaxFailAttempts('0')
-                    ->setSetupFee(new Currency(['value' => $price, 'currency' => settings()->payment->currency]));
+                    ->setSetupFee(new Currency(['value' => $price, 'currency' => $this->settings->payment->currency]));
 
                 $plan->setPaymentDefinitions([$payment_definition]);
                 $plan->setMerchantPreferences($merchant_preferences);
@@ -515,7 +512,7 @@ class Pay extends Controller {
                         die();
                     } else {
 
-                        Alerts::add_error(language()->pay->error_message->failed_payment);
+                        $_SESSION['error'][] = $this->language->pay->error_message->failed_payment;
                         redirect('pay/' . $this->plan_id);
 
                     }
@@ -543,7 +540,7 @@ class Pay extends Controller {
                         die();
                     } else {
 
-                        Alerts::add_error(language()->pay->error_message->failed_payment);
+                        $_SESSION['error'][] = $this->language->pay->error_message->failed_payment;
                         redirect('pay/' . $this->plan_id);
 
                     }
@@ -587,7 +584,7 @@ class Pay extends Controller {
                         die();
                     } else {
 
-                        Alerts::add_error(language()->pay->error_message->failed_payment);
+                        $_SESSION['error'][] = $this->language->pay->error_message->failed_payment;
                         redirect('pay/' . $this->plan_id);
 
                     }
@@ -606,8 +603,8 @@ class Pay extends Controller {
     private function paypal_process() {
 
         /* Initiate paypal */
-        $paypal = new \PayPal\Rest\ApiContext(new \PayPal\Auth\OAuthTokenCredential(settings()->paypal->client_id, settings()->paypal->secret));
-        $paypal->setConfig(['mode' => settings()->paypal->mode]);
+        $paypal = new \PayPal\Rest\ApiContext(new \PayPal\Auth\OAuthTokenCredential($this->settings->paypal->client_id, $this->settings->paypal->secret));
+        $paypal->setConfig(['mode' => $this->settings->paypal->mode]);
 
         /* Return confirmation processing */
         if($this->return_type && $this->payment_processor && $this->return_type == 'success' && $this->payment_processor = 'paypal' && isset($_GET['payment_frequency'], $_GET['code'])) {
@@ -620,8 +617,8 @@ class Pay extends Controller {
             if(isset($_GET['paymentId'], $_GET['PayerID'])) {
 
                 /* Initiate paypal */
-                $paypal = new \PayPal\Rest\ApiContext(new \PayPal\Auth\OAuthTokenCredential(settings()->paypal->client_id, settings()->paypal->secret));
-                $paypal->setConfig(['mode' => settings()->paypal->mode]);
+                $paypal = new \PayPal\Rest\ApiContext(new \PayPal\Auth\OAuthTokenCredential($this->settings->paypal->client_id, $this->settings->paypal->secret));
+                $paypal->setConfig(['mode' => $this->settings->paypal->mode]);
 
                 $payment_id = $_GET['paymentId'];
                 $payer_id = $_GET['PayerID'];
@@ -658,20 +655,20 @@ class Pay extends Controller {
                         die();
                     } else {
 
-                        Alerts::add_error(language()->pay->error_message->failed_payment);
+                        $_SESSION['error'][] = $this->language->pay->error_message->failed_payment;
                         redirect('pay/' . $this->plan_id);
 
                     }
                 }
 
                 /* Make sure the transaction is not already existing */
-                if(db()->where('payment_id', $payment_id)->where('processor', 'paypal')->has('payments')) {
+                if(Database::exists('id', 'payments', ['payment_id' => $payment_id, 'processor' => 'paypal'])) {
                     redirect('pay/' . $this->plan_id);
                 }
 
                 /* Make sure the payment is approved */
                 if($payment_status != 'approved') {
-                    Alerts::add_error(language()->pay->error_message->failed_payment);
+                    $_SESSION['error'][] = $this->language->pay->error_message->failed_payment;
                     redirect('pay/' . $this->plan_id);
                 }
 
@@ -683,7 +680,7 @@ class Pay extends Controller {
                 /* Unsubscribe from the previous plan if needed */
                 if(!empty($this->user->payment_subscription_id) && $this->user->payment_subscription_id != $payment_subscription_id) {
                     try {
-                        (new User(['user' => $this->user]))->cancel_subscription();
+                        (new User(['settings' => $this->settings, 'user' => $this->user]))->cancel_subscription();
                     } catch (\Exception $exception) {
 
                         /* Output errors properly */
@@ -692,7 +689,7 @@ class Pay extends Controller {
 
                             die();
                         } else {
-                            Alerts::add_error(language()->pay->error_message->failed_payment);
+                            $_SESSION['error'][] = $this->language->pay->error_message->failed_payment;
                             redirect('pay/' . $this->plan_id);
                         }
 
@@ -700,47 +697,52 @@ class Pay extends Controller {
                 }
 
                 /* Make sure the code exists */
-                $codes_code = db()->where('code', $code)->where('type', 'discount')->getOne('codes');
+                $codes_code = Database::get('*', 'codes', ['code' => $code, 'type' => 'discount']);
 
                 if($codes_code) {
                     $code = $codes_code->code;
 
                     /* Check if we should insert the usage of the code or not */
-                    if(!db()->where('user_id', $this->user->user_id)->where('code_id', $codes_code->code_id)->has('redeemed_codes')) {
-
+                    if(!Database::exists('id', 'redeemed_codes', ['user_id' => $this->user->user_id, 'code_id' => $codes_code->code_id])) {
                         /* Update the code usage */
-                        db()->where('code_id', $codes_code->code_id)->update('codes', ['redeemed' => db()->inc()]);
+                        $this->database->query("UPDATE `codes` SET `redeemed` = `redeemed` + 1 WHERE `code_id` = {$codes_code->code_id}");
 
                         /* Add log for the redeemed code */
-                        db()->insert('redeemed_codes', [
+                        Database::insert('redeemed_codes', [
                             'code_id'   => $codes_code->code_id,
                             'user_id'   => $this->user->user_id,
                             'date'      => \Altum\Date::$date
                         ]);
+
+                        Logger::users($this->user->user_id, 'codes.redeemed_code=' . $codes_code->code);
                     }
                 }
 
                 /* Add a log into the database */
-                $payment_id = db()->insert('payments', [
-                    'user_id' => $this->user->user_id,
-                    'plan_id' => $this->plan_id,
-                    'processor' => 'paypal',
-                    'type' => $payment_type,
-                    'frequency' => $payment_frequency,
-                    'code' => $code,
-                    'discount_amount' => $discount_amount,
-                    'base_amount' => $base_amount,
-                    'email' => $payer_email,
-                    'payment_id' => $payment_id,
-                    'subscription_id' => $subscription_id,
-                    'payer_id' => $payer_id,
-                    'name' => $payer_name,
-                    'billing' => settings()->payment->taxes_and_billing_is_enabled && $this->user->billing ? json_encode($this->user->billing) : null,
-                    'taxes_ids' => !empty($this->applied_taxes_ids) ? json_encode($this->applied_taxes_ids) : null,
-                    'total_amount' => $payment_total,
-                    'currency' => $payment_currency,
-                    'date' => \Altum\Date::$date
-                ]);
+                Database::insert(
+                    'payments',
+                    [
+                        'user_id' => $this->user->user_id,
+                        'plan_id' => $this->plan_id,
+                        'processor' => 'paypal',
+                        'type' => $payment_type,
+                        'frequency' => $payment_frequency,
+                        'code' => $code,
+                        'discount_amount' => $discount_amount,
+                        'base_amount' => $base_amount,
+                        'email' => $payer_email,
+                        'payment_id' => $payment_id,
+                        'subscription_id' => $subscription_id,
+                        'payer_id' => $payer_id,
+                        'name' => $payer_name,
+                        'billing' => $this->settings->payment->taxes_and_billing_is_enabled && $this->user->billing ? json_encode($this->user->billing) : null,
+                        'taxes_ids' => !empty($this->applied_taxes_ids) ? json_encode($this->applied_taxes_ids) : null,
+                        'total_amount' => $payment_total,
+                        'currency' => $payment_currency,
+                        'date' => Date::$date
+                    ],
+                    false
+                );
 
                 /* Update the user with the new plan */
                 switch($payment_frequency) {
@@ -757,12 +759,17 @@ class Pay extends Controller {
                         break;
                 }
 
-                /* Database query */
-                db()->where('user_id', $this->user->user_id)->update('users', [
-                    'plan_id' => $this->plan_id,
-                    'plan_settings' => json_encode($this->plan->settings),
-                    'plan_expiration_date' => $plan_expiration_date
-                ]);
+                Database::update(
+                    'users',
+                    [
+                        'plan_id' => $this->plan_id,
+                        'plan_settings' => json_encode($this->plan->settings),
+                        'plan_expiration_date' => $plan_expiration_date
+                    ],
+                    [
+                        'user_id' => $this->user->user_id
+                    ]
+                );
 
                 /* Clear the cache */
                 \Altum\Cache::$adapter->deleteItemsByTag('user_id=' . $this->user->user_id);
@@ -771,28 +778,30 @@ class Pay extends Controller {
                 /* Prepare the email */
                 $email_template = get_email_template(
                     [],
-                    language()->global->emails->user_payment->subject,
+                    $this->language->global->emails->user_payment->subject,
                     [
                         '{{PLAN_EXPIRATION_DATE}}' => Date::get($plan_expiration_date, 2),
-                        '{{USER_PLAN_LINK}}' => url('account-plan'),
+                        '{{USER_PACKAGE_LINK}}' => url('account-plan'),
                         '{{USER_PAYMENTS_LINK}}' => url('account-payments'),
                     ],
-                    language()->global->emails->user_payment->body
+                    $this->language->global->emails->user_payment->body
                 );
 
                 send_mail(
+                    $this->settings,
                     $this->user->email,
                     $email_template->subject,
                     $email_template->body
                 );
 
                 /* Send notification to admin if needed */
-                if(settings()->email_notifications->new_payment && !empty(settings()->email_notifications->emails)) {
+                if($this->settings->email_notifications->new_payment && !empty($this->settings->email_notifications->emails)) {
 
                     send_mail(
-                        explode(',', settings()->email_notifications->emails),
-                        sprintf(language()->global->emails->admin_new_payment_notification->subject, 'paypal', $payment_total, $payment_currency),
-                        sprintf(language()->global->emails->admin_new_payment_notification->body, $payment_total, $payment_currency)
+                        $this->settings,
+                        explode(',', $this->settings->email_notifications->emails),
+                        sprintf($this->language->global->emails->admin_new_payment_notification->subject, 'paypal', $payment_total, $payment_currency),
+                        sprintf($this->language->global->emails->admin_new_payment_notification->body, $payment_total, $payment_currency)
                     );
 
                 }
@@ -806,8 +815,8 @@ class Pay extends Controller {
             if(isset($_GET['token'], $_GET['payment_type'])) {
 
                 /* Initiate paypal */
-                $paypal = new \PayPal\Rest\ApiContext(new \PayPal\Auth\OAuthTokenCredential(settings()->paypal->client_id, settings()->paypal->secret));
-                $paypal->setConfig(['mode' => settings()->paypal->mode]);
+                $paypal = new \PayPal\Rest\ApiContext(new \PayPal\Auth\OAuthTokenCredential($this->settings->paypal->client_id, $this->settings->paypal->secret));
+                $paypal->setConfig(['mode' => $this->settings->paypal->mode]);
 
                 $token = $_GET['token'];
                 $agreement = new \PayPal\Api\Agreement();
@@ -825,7 +834,7 @@ class Pay extends Controller {
                         die();
                     } else {
 
-                        Alerts::add_error(language()->pay->error_message->failed_payment);
+                        $_SESSION['error'][] = $this->language->pay->error_message->failed_payment;
                         redirect('pay/' . $this->plan_id);
 
                     }
@@ -844,7 +853,7 @@ class Pay extends Controller {
                         die();
                     } else {
 
-                        Alerts::add_error(language()->pay->error_message->failed_payment);
+                        $_SESSION['error'][] = $this->language->pay->error_message->failed_payment;
                         redirect('pay/' . $this->plan_id);
 
                     }
@@ -855,7 +864,7 @@ class Pay extends Controller {
 
                 /* Make sure the payment is approved */
                 if($agreement_status != 'Active' && $agreement_status != 'Pending') {
-                    Alerts::add_error(language()->pay->error_message->failed_payment);
+                    $_SESSION['error'][] = $this->language->pay->error_message->failed_payment;
                     redirect('pay/' . $this->plan_id);
                 }
 
@@ -869,7 +878,7 @@ class Pay extends Controller {
 
         /* Return confirmation processing if failed */
         if($this->return_type && $this->payment_processor && $this->return_type == 'cancel' && $this->payment_processor = 'paypal') {
-            Alerts::add_error(language()->pay->error_message->canceled_payment);
+            $_SESSION['error'][] = $this->language->pay->error_message->canceled_payment;
             redirect('pay/' . $this->plan_id);
         }
 
@@ -878,7 +887,7 @@ class Pay extends Controller {
     private function stripe_create() {
 
         /* Initiate Stripe */
-        \Stripe\Stripe::setApiKey(settings()->stripe->secret_key);
+        \Stripe\Stripe::setApiKey($this->settings->stripe->secret_key);
 
         /* Payment details */
         $product = $this->plan->name;
@@ -904,7 +913,7 @@ class Pay extends Controller {
         $price = $this->calculate_price_with_taxes($price);
 
         /* Final price */
-        $stripe_formatted_price = in_array(settings()->payment->currency, ['MGA', 'BIF', 'CLP', 'PYG', 'DJF', 'RWF', 'GNF', 'UGX', 'JPY', 'VND', 'VUV', 'XAF', 'KMF', 'KRW', 'XOF', 'XPF']) ? number_format($price, 0, '.', '') : number_format($price, 2, '.', '') * 100;
+        $stripe_formatted_price = in_array($this->settings->payment->currency, ['MGA', 'BIF', 'CLP', 'PYG', 'DJF', 'RWF', 'GNF', 'UGX', 'JPY', 'VND', 'VUV', 'XAF', 'KMF', 'KRW', 'XOF', 'XPF']) ? number_format($price, 0, '.', '') : number_format($price, 2, '.', '') * 100;
 
         $price = number_format($price, 2, '.', '');
 
@@ -917,7 +926,7 @@ class Pay extends Controller {
                         'name' => $product,
                         'description' => $_POST['payment_frequency'],
                         'amount' => $stripe_formatted_price,
-                        'currency' => settings()->payment->currency,
+                        'currency' => $this->settings->payment->currency,
                         'quantity' => 1,
                     ]],
                     'metadata' => [
@@ -954,7 +963,7 @@ class Pay extends Controller {
                 }
 
                 /* Generate the plan id with the proper parameters */
-                $stripe_plan_id = $this->plan_id . '_' . $_POST['payment_frequency'] . '_' . $stripe_formatted_price . '_' . settings()->payment->currency;
+                $stripe_plan_id = $this->plan_id . '_' . $_POST['payment_frequency'] . '_' . $stripe_formatted_price . '_' . $this->settings->payment->currency;
 
                 /* Check if we already have a payment plan created and try to get it */
                 try {
@@ -970,11 +979,11 @@ class Pay extends Controller {
                             'amount' => $stripe_formatted_price,
                             'interval' => $_POST['payment_frequency'] == 'monthly' ? 'month' : 'year',
                             'product' => $stripe_product->id,
-                            'currency' => settings()->payment->currency,
+                            'currency' => $this->settings->payment->currency,
                             'id' => $stripe_plan_id
                         ]);
                     } catch (\Exception $exception) {
-                        Alerts::add_error($exception->getMessage());
+                        $_SESSION['error'][] = $exception->getMessage();
                         redirect('pay/' . $this->plan_id);
                     }
                 }
@@ -1024,11 +1033,12 @@ class Pay extends Controller {
 
         /* Return confirmation processing if failed */
         if($this->return_type && $this->payment_processor && $this->return_type == 'cancel' && $this->payment_processor = 'stripe') {
-            Alerts::add_error(language()->pay->error_message->canceled_payment);
+            $_SESSION['error'][] = $this->language->pay->error_message->canceled_payment;
             redirect('pay/' . $this->plan_id);
         }
 
     }
+
 
     private function offline_payment_process() {
 
@@ -1067,7 +1077,7 @@ class Pay extends Controller {
 
         /* Error checks */
         if(!$offline_payment_proof) {
-            Alerts::add_error(language()->pay->error_message->offline_payment_proof_missing);
+            $_SESSION['error'][] = $this->language->pay->error_message->offline_payment_proof_missing;
             redirect('pay/' . $this->plan_id);
         }
 
@@ -1077,12 +1087,12 @@ class Pay extends Controller {
         $offline_payment_proof_file_temp = $_FILES['offline_payment_proof']['tmp_name'];
 
         if(!in_array($offline_payment_proof_file_extension, $file_allowed_extensions)) {
-            Alerts::add_error(language()->global->error_message->invalid_file_type);
+            $_SESSION['error'][] = $this->language->global->error_message->invalid_file_type;
             redirect('pay/' . $this->plan_id);
         }
 
         if(!is_writable(UPLOADS_PATH . 'offline_payment_proofs/')) {
-            Alerts::add_error(sprintf(language()->global->error_message->directory_not_writable, UPLOADS_PATH . 'offline_payment_proofs/'));
+            $_SESSION['error'][] = sprintf($this->language->global->error_message->directory_not_writable, UPLOADS_PATH . 'offline_payment_proofs/');
             redirect('pay/' . $this->plan_id);
         }
 
@@ -1093,36 +1103,41 @@ class Pay extends Controller {
         move_uploaded_file($offline_payment_proof_file_temp, UPLOADS_PATH . 'offline_payment_proofs/' . $offline_payment_proof_new_name);
 
         /* Add a log into the database */
-        db()->insert('payments', [
-            'user_id' => $this->user->user_id,
-            'plan_id' => $this->plan_id,
-            'processor' => 'offline_payment',
-            'type' => $_POST['payment_type'],
-            'frequency' => $_POST['payment_frequency'],
-            'code' => $code,
-            'discount_amount' => $discount_amount,
-            'base_amount' => $base_amount,
-            'email' => $this->user->email,
-            'payment_id' => $payment_id,
-            'subscription_id' => '',
-            'payer_id' => $this->user->user_id,
-            'name' => $this->user->name,
-            'billing' => settings()->payment->taxes_and_billing_is_enabled && $this->user->billing ? json_encode($this->user->billing) : null,
-            'taxes_ids' => !empty($this->applied_taxes_ids) ? json_encode($this->applied_taxes_ids) : null,
-            'total_amount' => $price,
-            'currency' => settings()->payment->currency,
-            'payment_proof' => $offline_payment_proof_new_name,
-            'status' => 0,
-            'date' => Date::$date
-        ]);
+        Database::insert(
+            'payments',
+            [
+                'user_id' => $this->user->user_id,
+                'plan_id' => $this->plan_id,
+                'processor' => 'offline_payment',
+                'type' => $_POST['payment_type'],
+                'frequency' => $_POST['payment_frequency'],
+                'code' => $code,
+                'discount_amount' => $discount_amount,
+                'base_amount' => $base_amount,
+                'email' => $this->user->email,
+                'payment_id' => $payment_id,
+                'subscription_id' => '',
+                'payer_id' => $this->user->user_id,
+                'name' => $this->user->name,
+                'billing' => $this->settings->payment->taxes_and_billing_is_enabled && $this->user->billing ? json_encode($this->user->billing) : null,
+                'taxes_ids' => !empty($this->applied_taxes_ids) ? json_encode($this->applied_taxes_ids) : null,
+                'total_amount' => $price,
+                'currency' => $this->settings->payment->currency,
+                'payment_proof' => $offline_payment_proof_new_name,
+                'status' => 0,
+                'date' => Date::$date
+            ],
+            false
+        );
 
         /* Send notification to admin if needed */
-        if(settings()->email_notifications->new_payment && !empty(settings()->email_notifications->emails)) {
+        if($this->settings->email_notifications->new_payment && !empty($this->settings->email_notifications->emails)) {
 
             send_mail(
-                explode(',', settings()->email_notifications->emails),
-                sprintf(language()->global->emails->admin_new_payment_notification->subject, 'offline_payment', $price, settings()->payment->currency),
-                sprintf(language()->global->emails->admin_new_payment_notification->body, $price, settings()->payment->currency)
+                $this->settings,
+                explode(',', $this->settings->email_notifications->emails),
+                sprintf($this->language->global->emails->admin_new_payment_notification->subject, 'offline_payment', $price, $this->settings->payment->currency),
+                sprintf($this->language->global->emails->admin_new_payment_notification->body, $price, $this->settings->payment->currency)
             );
 
         }
@@ -1135,13 +1150,11 @@ class Pay extends Controller {
     public function code() {
         Authentication::guard();
 
-        $_POST = json_decode(file_get_contents('php://input'), true);
-
         if(!Csrf::check('global_token')) {
             die();
         }
 
-        if(!settings()->payment->is_enabled || !settings()->payment->codes_is_enabled) {
+        if(!$this->settings->payment->is_enabled || !$this->settings->payment->codes_is_enabled) {
             die();
         }
 
@@ -1153,19 +1166,20 @@ class Pay extends Controller {
         $_POST['code'] = Database::clean_string($_POST['code']);
 
         /* Make sure the discount code exists */
-        $code = database()->query("SELECT * FROM `codes` WHERE (`plan_id` IS NULL OR `plan_id` = '{$_POST['plan_id']}') AND `code` = '{$_POST['code']}' AND `redeemed` < `quantity` AND `type` = 'discount'")->fetch_object();
+        $code = $this->database->query("SELECT * FROM `codes` WHERE (`plan_id` IS NULL OR `plan_id` = '{$_POST['plan_id']}') AND `code` = '{$_POST['code']}' AND `redeemed` < `quantity` AND `type` = 'discount'")->fetch_object();
 
         if(!$code) {
-            Response::json(language()->pay->error_message->code_invalid, 'error');
+            Response::json($this->language->pay->error_message->code_invalid, 'error');
         }
 
-        if(db()->where('user_id', $this->user->user_id)->where('code_id', $code->code_id)->has('redeemed_codes')) {
-            Response::json(language()->pay->error_message->code_used, 'error');
+        if(Database::exists('id', 'redeemed_codes', ['user_id' => $this->user->user_id, 'code_id' => $code->code_id])) {
+            Response::json($this->language->pay->error_message->code_used, 'error');
         }
 
 
-        Response::json(sprintf(language()->pay->success_message->code, '<strong>' . $code->discount . '%</strong>'), 'success', ['discount' => $code->discount]);
+        Response::json(sprintf($this->language->pay->success_message->code, '<strong>' . $code->discount . '%</strong>'), 'success', ['discount' => $code->discount]);
     }
+
 
     /* Generate the generic return url parameters */
     private function return_url_parameters($return_type, $base_amount, $total_amount, $code, $discount_amount) {

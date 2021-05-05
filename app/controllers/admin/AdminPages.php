@@ -2,15 +2,22 @@
 
 namespace Altum\Controllers;
 
-use Altum\Alerts;
+use Altum\Database\Database;
 use Altum\Middlewares\Csrf;
+use Altum\Models\Plan;
+use Altum\Models\User;
+use Altum\Middlewares\Authentication;
+use Altum\Response;
+use Altum\Routing\Router;
 
 class AdminPages extends Controller {
 
     public function index() {
 
+        Authentication::guard('admin');
+
         /* Get all the pages categories */
-        $pages_categories_result = database()->query("
+        $pages_categories_result = $this->database->query("
             SELECT 
                 `pages_categories`.*,
                 COUNT(`pages`.`page_id`) AS `total_pages`
@@ -20,7 +27,7 @@ class AdminPages extends Controller {
             ORDER BY `pages_categories`.`order` ASC
         ");
 
-        $pages_result = database()->query("
+        $pages_result = Database::$database->query("
             SELECT 
                 `pages`.*,
                 `pages_categories`.`icon` AS `pages_category_icon`,
@@ -52,22 +59,24 @@ class AdminPages extends Controller {
 
     public function delete() {
 
-        $page_id = isset($this->params[0]) ? (int) $this->params[0] : null;
+        Authentication::guard();
+
+        $page_id = (isset($this->params[0])) ? $this->params[0] : false;
 
         if(!Csrf::check('global_token')) {
-            Alerts::add_error(language()->global->error_message->invalid_csrf_token);
+            $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
         }
 
-        if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
+        if(empty($_SESSION['error'])) {
 
             /* Delete the page */
-            db()->where('page_id', $page_id)->delete('pages');
+            Database::$database->query("DELETE FROM `pages` WHERE `page_id` = {$page_id}");
 
             /* Clear cache */
             \Altum\Cache::$adapter->deleteItems(['pages_top', 'pages_bottom', 'pages_hidden']);
 
-            /* Set a nice success message */
-            Alerts::add_success(language()->admin_page_delete_modal->success_message);
+            /* Success message */
+            $_SESSION['success'][] = $this->language->admin_page_delete_modal->success_message;
 
         }
 

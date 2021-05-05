@@ -6,9 +6,9 @@
     <nav aria-label="breadcrumb">
         <small>
             <ol class="custom-breadcrumbs">
-                <li><a href="<?= url() ?>"><?= language()->index->breadcrumb ?></a> <i class="fa fa-fw fa-angle-right"></i></li>
-                <li><a href="<?= SITE_URL . 'pages' ?>"><?= language()->pages->index->breadcrumb ?></a> <i class="fa fa-fw fa-angle-right"></i></li>
-                <li class="active" aria-current="page"><?= language()->pages->pages_category->breadcrumb ?></li>
+                <li><a href="<?= url() ?>"><?= $this->language->index->breadcrumb ?></a> <i class="fa fa-fw fa-angle-right"></i></li>
+                <li><a href="<?= SITE_URL . 'pages' ?>"><?= $this->language->pages->index->breadcrumb ?></a> <i class="fa fa-fw fa-angle-right"></i></li>
+                <li class="active" aria-current="page"><?= $this->language->pages->pages_category->breadcrumb ?></li>
             </ol>
         </small>
     </nav>
@@ -26,7 +26,7 @@
 
         <div class="d-print-none col-auto p-0 d-flex align-items-center">
             <?php if(\Altum\Middlewares\Authentication::is_admin()): ?>
-                <?= include_view(THEME_PATH . 'views/admin/pages/admin_pages_category_dropdown_button.php', ['id' => $data->pages_category->pages_category_id]) ?>
+                <?= include_view(THEME_PATH . 'views/admin/partials/admin_pages_category_dropdown_button.php', ['id' => $data->pages_category->pages_category_id]) ?>
             <?php endif ?>
         </div>
     </div>
@@ -43,7 +43,7 @@
                             <a href="<?= $row->type == 'internal' ? SITE_URL . 'page/' . $row->url : $row->url ?>" target="<?= $row->type == 'internal' ? '_self' : '_blank' ?>" class="h5 mr-1"><?= $row->title ?></a>
 
                             <?php if($row->type == 'internal'): ?>
-                                <small class="text-muted"><?= sprintf(language()->pages->total_views, nr($row->total_views)) ?></small>
+                                <small class="text-muted"><?= sprintf($this->language->pages->total_views, nr($row->total_views)) ?></small>
                             <?php endif ?>
                         </div>
 

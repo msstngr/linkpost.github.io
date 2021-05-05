@@ -2,10 +2,10 @@
 
 <header class="mb-6">
     <div class="container">
-        <?= \Altum\Alerts::output_alerts() ?>
+        <?php display_notifications() ?>
 
         <div class="row justify-content-between">
-            <?php if(settings()->links->domains_is_enabled): ?>
+            <?php if($this->settings->links->domains_is_enabled): ?>
             <div class="col-12 col-lg mb-3 mb-xl-0">
                 <div class="card h-100">
                     <div class="card-body d-flex">
@@ -20,7 +20,7 @@
 
                         <div>
                             <div class="card-title h4 m-0"><?= nr($data->domains_total) ?></div>
-                            <span class="text-muted"><?= language()->dashboard->header->domains ?></span>
+                            <span class="text-muted"><?= $this->language->dashboard->header->domains ?></span>
                         </div>
                     </div>
                 </div>
@@ -41,7 +41,7 @@
 
                         <div>
                             <div class="card-title h4 m-0"><?= nr($data->projects_total) ?></div>
-                            <span class="text-muted"><?= language()->dashboard->header->projects ?></span>
+                            <span class="text-muted"><?= $this->language->dashboard->header->projects ?></span>
                         </div>
                     </div>
                 </div>
@@ -61,7 +61,7 @@
 
                         <div>
                             <div class="card-title h4 m-0"><?= nr($data->links_total) ?></div>
-                            <span class="text-muted"><?= language()->dashboard->header->links ?></span>
+                            <span class="text-muted"><?= $this->language->dashboard->header->links ?></span>
                         </div>
                     </div>
                 </div>
@@ -81,7 +81,7 @@
 
                         <div>
                             <div class="card-title h4 m-0"><?= nr($data->links_clicks_total) ?></div>
-                            <span class="text-muted"><?= language()->dashboard->header->clicks ?></span>
+                            <span class="text-muted"><?= $this->language->dashboard->header->clicks ?></span>
                         </div>
                     </div>
                 </div>
@@ -105,7 +105,7 @@
 
 <section class="container">
 
-    <?= \Altum\Alerts::output_alerts() ?>
+    <?php display_notifications() ?>
 
     <?= $this->views['links_content'] ?>
 
@@ -132,14 +132,14 @@
             labels: <?= $data->links_chart['labels'] ?>,
             datasets: [
                 {
-                    label: <?= json_encode(language()->link->statistics->pageviews) ?>,
+                    label: <?= json_encode($this->language->link->statistics->pageviews) ?>,
                     data: <?= $data->links_chart['pageviews'] ?? '[]' ?>,
                     backgroundColor: gradient,
                     borderColor: '#38B2AC',
                     fill: true
                 },
                 {
-                    label: <?= json_encode(language()->link->statistics->visitors) ?>,
+                    label: <?= json_encode($this->language->link->statistics->visitors) ?>,
                     data: <?= $data->links_chart['visitors'] ?? '[]' ?>,
                     backgroundColor: gradient_white,
                     borderColor: '#383eb2',

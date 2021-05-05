@@ -161,7 +161,7 @@ class RequestOptions
         $redactedLast = \strlen($last) > 4
             ? (\str_repeat('*', \strlen($last) - 4) . \substr($last, -4))
             : $last;
-        $pieces[] = $redactedLast;
+        \array_push($pieces, $redactedLast);
 
         return \implode('_', $pieces);
     }

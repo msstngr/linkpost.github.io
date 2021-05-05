@@ -1,5 +1,4 @@
 <?php
-
 /**
  *
  * This file is part of phpFastCache.
@@ -16,14 +15,13 @@ declare(strict_types=1);
 
 namespace Phpfastcache\Exceptions;
 
-use Exception;
 use Psr\SimpleCache\CacheException;
 
 /**
  * Class PhpfastcacheRootException
  * @package Phpfastcache\Exceptions
  */
-class PhpfastcacheSimpleCacheException extends Exception implements CacheException
+class PhpfastcacheSimpleCacheException extends \Exception implements CacheException
 {
 
 }

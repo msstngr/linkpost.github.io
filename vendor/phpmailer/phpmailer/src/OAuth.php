@@ -1,5 +1,4 @@
 <?php
-
 /**
  * PHPMailer - PHP email creation and transport class.
  * PHP Version 5.5.
@@ -123,7 +122,7 @@ class OAuth
      */
     public function getOauth64()
     {
-        //Get a new token if it's not available or has expired
+        // Get a new token if it's not available or has expired
         if (null === $this->oauthToken || $this->oauthToken->hasExpired()) {
             $this->oauthToken = $this->getToken();
         }

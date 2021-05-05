@@ -8,25 +8,25 @@
         <nav aria-label="breadcrumb">
             <small>
                 <ol class="custom-breadcrumbs">
-                    <li><a href="<?= url('dashboard') ?>"><?= language()->dashboard->breadcrumb ?></a> <i class="fa fa-fw fa-angle-right"></i></li>
-                    <li><a href="<?= url('links') ?>"><?= language()->links->breadcrumb ?></a> <i class="fa fa-fw fa-angle-right"></i></li>
+                    <li><a href="<?= url('dashboard') ?>"><?= $this->language->dashboard->breadcrumb ?></a> <i class="fa fa-fw fa-angle-right"></i></li>
+                    <li><a href="<?= url('links') ?>"><?= $this->language->links->breadcrumb ?></a> <i class="fa fa-fw fa-angle-right"></i></li>
                     <?php if($data->link->type == 'biolink'): ?>
 
                         <?php if($data->link->type == 'biolink' && $data->link->subtype != 'base'): ?>
 
                             <li>
                                 <a href="<?= url('link/' . $data->link->link_id) ?>">
-                                    <?= language()->link->breadcrumb_biolink ?>
+                                    <?= $this->language->link->breadcrumb_biolink ?>
                                 </a> <i class="fa fa-fw fa-angle-right"></i>
                             </li>
 
                             <?php if($data->method == 'settings'): ?>
                                 <li class="active" aria-current="page">
-                                    <?= language()->link->breadcrumb_link . ' ' . language()->link->settings->breadcrumb ?>
+                                    <?= $this->language->link->breadcrumb_link . ' ' . $this->language->link->settings->breadcrumb ?>
                                 </li>
                             <?php elseif($data->method == 'statistics'): ?>
                                 <li class="active" aria-current="page">
-                                    <?= language()->link->breadcrumb_link . ' ' . language()->link->statistics->breadcrumb ?>
+                                    <?= $this->language->link->breadcrumb_link . ' ' . $this->language->link->statistics->breadcrumb ?>
                                 </li>
                             <?php endif ?>
 
@@ -34,11 +34,11 @@
 
                             <?php if($data->method == 'settings'): ?>
                                 <li class="active" aria-current="page">
-                                    <?= language()->link->breadcrumb_biolink . ' ' . language()->link->settings->breadcrumb ?>
+                                    <?= $this->language->link->breadcrumb_biolink . ' ' . $this->language->link->settings->breadcrumb ?>
                                 </li>
                             <?php elseif($data->method == 'statistics'): ?>
                                 <li class="active" aria-current="page">
-                                    <?= language()->link->breadcrumb_biolink . ' ' . language()->link->statistics->breadcrumb ?>
+                                    <?= $this->language->link->breadcrumb_biolink . ' ' . $this->language->link->statistics->breadcrumb ?>
                                 </li>
                             <?php endif ?>
 
@@ -48,11 +48,11 @@
 
                         <?php if($data->method == 'settings'): ?>
                             <li class="active" aria-current="page">
-                                <?= language()->link->breadcrumb_link . ' ' . language()->link->settings->breadcrumb ?>
+                                <?= $this->language->link->breadcrumb_link . ' ' . $this->language->link->settings->breadcrumb ?>
                             </li>
                         <?php elseif($data->method == 'statistics'): ?>
                             <li class="active" aria-current="page">
-                                <?= language()->link->breadcrumb_link . ' ' . language()->link->statistics->breadcrumb ?>
+                                <?= $this->language->link->breadcrumb_link . ' ' . $this->language->link->statistics->breadcrumb ?>
                             </li>
                         <?php endif ?>
 
@@ -63,9 +63,9 @@
 
         <div class="d-flex flex-column flex-md-row justify-content-between">
             <div class="d-flex align-items-center">
-                <h1 id="link_url" class="h3 mr-3"><?= sprintf(language()->link->header->header, $data->link->url) ?></h1>
+                <h1 id="link_url" class="h3 mr-3"><?= sprintf($this->language->link->header->header, $data->link->url) ?></h1>
 
-                <div class="custom-control custom-switch mr-3" data-toggle="tooltip" title="<?= language()->links->is_enabled_tooltip ?>">
+                <div class="custom-control custom-switch mr-3" data-toggle="tooltip" title="<?= $this->language->links->is_enabled_tooltip ?>">
                     <input
                             type="checkbox"
                             class="custom-control-input"
@@ -82,10 +82,10 @@
                         <i class="fa fa-ellipsis-v"></i>
 
                         <div class="dropdown-menu dropdown-menu-right">
-                            <a href="<?= url('link/' . $data->link->link_id) ?>" class="dropdown-item"><i class="fa fa-fw fa-pencil-alt"></i> <?= language()->global->edit ?></a>
-                            <a href="<?= url('link/' . $data->link->link_id . '/statistics') ?>" class="dropdown-item"><i class="fa fa-fw fa-chart-bar"></i> <?= language()->link->statistics->link ?></a>
-                            <a href="<?= $data->link->full_url . '/qr' ?>" target="_blank" class="dropdown-item" rel="noreferrer"><i class="fa fa-fw fa-qrcode"></i> <?= language()->link->qr->link ?></a>
-                            <a href="#" class="dropdown-item" data-delete="<?= language()->global->info_message->confirm_delete ?>" data-row-id="<?= $data->link->link_id ?>"><i class="fa fa-fw fa-times"></i> <?= language()->global->delete ?></a>
+                            <a href="<?= url('link/' . $data->link->link_id) ?>" class="dropdown-item"><i class="fa fa-fw fa-pencil-alt"></i> <?= $this->language->global->edit ?></a>
+                            <a href="<?= url('link/' . $data->link->link_id . '/statistics') ?>" class="dropdown-item"><i class="fa fa-fw fa-chart-bar"></i> <?= $this->language->link->statistics->link ?></a>
+                            <a href="<?= $data->link->full_url . '/qr' ?>" target="_blank" class="dropdown-item" rel="noreferrer"><i class="fa fa-fw fa-qrcode"></i> <?= $this->language->link->qr->link ?></a>
+                            <a href="#" class="dropdown-item" data-delete="<?= $this->language->global->info_message->confirm_delete ?>" data-row-id="<?= $data->link->link_id ?>"><i class="fa fa-fw fa-times"></i> <?= $this->language->global->delete ?></a>
                         </div>
                     </a>
                 </div>
@@ -94,23 +94,23 @@
             <div class="d-none d-md-block">
                 <?php if(($data->link->type == 'biolink' && $data->link->subtype == 'base') || $data->link->type == 'link'): ?>
                     <?php if($data->method != 'statistics'): ?>
-                    <a href="<?= url('link/' . $data->link->link_id . '/statistics') ?>" class="btn btn-light rounded-pill mr-3"><i class="fa fa-fw fa-sm fa-chart-bar"></i> <?= language()->link->statistics->link ?></a>
+                    <a href="<?= url('link/' . $data->link->link_id . '/statistics') ?>" class="btn btn-light rounded-pill mr-3"><i class="fa fa-fw fa-sm fa-chart-bar"></i> <?= $this->language->link->statistics->link ?></a>
                     <?php endif ?>
 
                     <?php if($data->method != 'settings'): ?>
-                    <a href="<?= url('link/' . $data->link->link_id . '/settings') ?>" class="btn btn-light rounded-pill mr-3"><i class="fa fa-fw fa-sm fa-cog"></i> <?= language()->link->settings->link ?></a>
+                    <a href="<?= url('link/' . $data->link->link_id . '/settings') ?>" class="btn btn-light rounded-pill mr-3"><i class="fa fa-fw fa-sm fa-cog"></i> <?= $this->language->link->settings->link ?></a>
                     <?php endif ?>
                 <?php endif ?>
             </div>
         </div>
 
         <div class="d-flex align-items-baseline">
-            <span class="mr-1" data-toggle="tooltip" title="<?= language()->link->{$data->link->type}->name ?>">
-                <i class="fa fa-fw fa-circle fa-sm" style="color: <?= language()->link->{$data->link->type}->color ?>"></i>
+            <span class="mr-1" data-toggle="tooltip" title="<?= $this->language->link->{$data->link->type}->name ?>">
+                <i class="fa fa-fw fa-circle fa-sm" style="color: <?= $this->language->link->{$data->link->type}->color ?>"></i>
             </span>
 
             <div class="col-8 col-md-auto text-muted text-truncate">
-                <?= sprintf(language()->link->header->subheader, '<a id="link_full_url" href="' . $data->link->full_url . '" target="_blank" rel="noreferrer">' . $data->link->full_url . '</a>') ?>
+                <?= sprintf($this->language->link->header->subheader, '<a id="link_full_url" href="' . $data->link->full_url . '" target="_blank" rel="noreferrer">' . $data->link->full_url . '</a>') ?>
             </div>
 
             <button
@@ -118,10 +118,10 @@
                     type="button"
                     class="btn btn-link"
                     data-toggle="tooltip"
-                    title="<?= language()->global->clipboard_copy ?>"
-                    aria-label="<?= language()->global->clipboard_copy ?>"
-                    data-copy="<?= language()->global->clipboard_copy ?>"
-                    data-copied="<?= language()->global->clipboard_copied ?>"
+                    title="<?= $this->language->global->clipboard_copy ?>"
+                    aria-label="<?= $this->language->global->clipboard_copy ?>"
+                    data-copy="<?= $this->language->global->clipboard_copy ?>"
+                    data-copied="<?= $this->language->global->clipboard_copied ?>"
                     data-clipboard-text="<?= $data->link->full_url ?>"
             >
                 <i class="fa fa-fw fa-sm fa-copy"></i>
@@ -134,7 +134,7 @@
 
 <section class="container">
 
-    <?= \Altum\Alerts::output_alerts() ?>
+    <?php display_notifications() ?>
 
     <?= $this->views['method'] ?>
 

@@ -3,9 +3,9 @@
 <div class="d-flex flex-column flex-lg-row justify-content-between mb-4">
     <div>
         <div class="d-flex justify-content-between">
-            <h1 class="h3"><i class="fa fa-fw fa-xs fa-chart-line text-primary-900 mr-2"></i> <?= sprintf(language()->admin_statistics->header) ?></h1>
+            <h1 class="h3"><i class="fa fa-fw fa-xs fa-chart-line text-primary-900 mr-2"></i> <?= sprintf($this->language->admin_statistics->header) ?></h1>
         </div>
-        <p class="text-muted"><?= language()->admin_statistics->subheader ?></p>
+        <p class="text-muted"><?= $this->language->admin_statistics->subheader ?></p>
     </div>
 
     <div class="col-auto p-0">
@@ -17,10 +17,10 @@
         >
             <i class="fa fa-fw fa-calendar mr-1"></i>
             <span>
-                <?php if($data->datetime['start_date'] == $data->datetime['end_date']): ?>
-                    <?= \Altum\Date::get($data->datetime['start_date'], 2, \Altum\Date::$default_timezone) ?>
+                <?php if($data->date->start_date == $data->date->end_date): ?>
+                    <?= \Altum\Date::get($data->date->start_date, 2, \Altum\Date::$default_timezone) ?>
                 <?php else: ?>
-                    <?= \Altum\Date::get($data->datetime['start_date'], 2, \Altum\Date::$default_timezone) . ' - ' . \Altum\Date::get($data->datetime['end_date'], 2, \Altum\Date::$default_timezone) ?>
+                    <?= \Altum\Date::get($data->date->start_date, 2, \Altum\Date::$default_timezone) . ' - ' . \Altum\Date::get($data->date->end_date, 2, \Altum\Date::$default_timezone) ?>
                 <?php endif ?>
             </span>
             <i class="fa fa-fw fa-caret-down ml-1"></i>
@@ -28,16 +28,16 @@
     </div>
 </div>
 
-<?= \Altum\Alerts::output_alerts() ?>
+<?php display_notifications() ?>
 
 <div class="row">
     <div class="mb-5 mb-xl-0 col-12 col-xl-3">
         <div class="nav flex-column nav-pills">
-            <a class="nav-link <?= $data->type == 'growth' ? 'active' : null ?>" href="<?= url('admin/statistics/growth?start_date=' . $data->datetime['start_date'] . '&end_date=' . $data->datetime['end_date']) ?>"><i class="fa fa-fw fa-sm fa-seedling mr-1"></i> <?= language()->admin_statistics->growth->menu ?></a>
-            <?php if(in_array(settings()->license->type, ['SPECIAL','Extended License'])): ?>
-                <a class="nav-link <?= $data->type == 'payments' ? 'active' : null ?>" href="<?= url('admin/statistics/payments?start_date=' . $data->datetime['start_date'] . '&end_date=' . $data->datetime['end_date']) ?>"><i class="fa fa-fw fa-sm fa-dollar-sign mr-1"></i> <?= language()->admin_statistics->payments->menu ?></a>
+            <a class="nav-link <?= $data->type == 'growth' ? 'active' : null ?>" href="<?= url('admin/statistics/growth?start_date=' . $data->date->start_date . '&end_date=' . $data->date->end_date) ?>"><i class="fa fa-fw fa-sm fa-seedling mr-1"></i> <?= $this->language->admin_statistics->growth->menu ?></a>
+            <?php if(in_array($this->settings->license->type, ['SPECIAL','Extended License'])): ?>
+                <a class="nav-link <?= $data->type == 'payments' ? 'active' : null ?>" href="<?= url('admin/statistics/payments?start_date=' . $data->date->start_date . '&end_date=' . $data->date->end_date) ?>"><i class="fa fa-fw fa-sm fa-dollar-sign mr-1"></i> <?= $this->language->admin_statistics->payments->menu ?></a>
             <?php endif ?>
-            <a class="nav-link <?= $data->type == 'links' ? 'active' : null ?>" href="<?= url('admin/statistics/links?start_date=' . $data->datetime['start_date'] . '&end_date=' . $data->datetime['end_date']) ?>"><i class="fa fa-fw fa-sm fa-link mr-1"></i> <?= language()->admin_statistics->links->menu ?></a>
+            <a class="nav-link <?= $data->type == 'links' ? 'active' : null ?>" href="<?= url('admin/statistics/links?start_date=' . $data->date->start_date . '&end_date=' . $data->date->end_date) ?>"><i class="fa fa-fw fa-sm fa-link mr-1"></i> <?= $this->language->admin_statistics->links->menu ?></a>
         </div>
     </div>
 
@@ -73,18 +73,18 @@
 
     /* Daterangepicker */
     $('#daterangepicker').daterangepicker({
-        startDate: <?= json_encode($data->datetime['start_date']) ?>,
-        endDate: <?= json_encode($data->datetime['end_date']) ?>,
+        startDate: <?= json_encode($data->date->start_date) ?>,
+        endDate: <?= json_encode($data->date->end_date) ?>,
         minDate: $('#daterangepicker').data('min-date'),
         maxDate: $('#daterangepicker').data('max-date'),
         ranges: {
-            <?= json_encode(language()->global->date->today) ?>: [moment(), moment()],
-            <?= json_encode(language()->global->date->yesterday) ?>: [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-            <?= json_encode(language()->global->date->last_7_days) ?>: [moment().subtract(6, 'days'), moment()],
-            <?= json_encode(language()->global->date->last_30_days) ?>: [moment().subtract(29, 'days'), moment()],
-            <?= json_encode(language()->global->date->this_month) ?>: [moment().startOf('month'), moment().endOf('month')],
-            <?= json_encode(language()->global->date->last_month) ?>: [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
-            <?= json_encode(language()->global->date->all_time) ?>: [moment('2015-01-01'), moment()]
+            <?= json_encode($this->language->global->date->today) ?>: [moment(), moment()],
+            <?= json_encode($this->language->global->date->yesterday) ?>: [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+            <?= json_encode($this->language->global->date->last_7_days) ?>: [moment().subtract(6, 'days'), moment()],
+            <?= json_encode($this->language->global->date->last_30_days) ?>: [moment().subtract(29, 'days'), moment()],
+            <?= json_encode($this->language->global->date->this_month) ?>: [moment().startOf('month'), moment().endOf('month')],
+            <?= json_encode($this->language->global->date->last_month) ?>: [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+            <?= json_encode($this->language->global->date->all_time) ?>: [moment('2015-01-01'), moment()]
         },
         alwaysShowCalendars: true,
         linkedCalendars: false,

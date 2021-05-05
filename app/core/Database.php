@@ -5,7 +5,6 @@ namespace Altum\Database;
 class Database {
 
     public static $database;
-    public static $db;
 
     public static function initialize() {
 
@@ -29,14 +28,7 @@ class Database {
 
         self::$database->set_charset('utf8mb4');
 
-        self::initialize_helper();
-
         return self::$database;
-    }
-
-    public static function initialize_helper() {
-        self::$db = new \MysqliDb (self::$database);
-        self::$db->returnType = 'object';
     }
 
     public static function get($what, $from, Array $conditions = [], $order = false, $clean = true) {
@@ -79,7 +71,7 @@ class Database {
 
     }
 
-    public static function exists($what, $from, $conditions) {
+    public static function exists($what = [], $from, $conditions = []) {
 
         $what = (!is_array($what)) ? '`' . $what . '`' : '`' . implode('`, `', $what) . '`';
         $from = '`' . $from . '`';

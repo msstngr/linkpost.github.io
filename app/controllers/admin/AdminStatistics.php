@@ -3,16 +3,22 @@
 namespace Altum\Controllers;
 
 use Altum\Database\Database;
+use Altum\Middlewares\Authentication;
 
 class AdminStatistics extends Controller {
     public $type;
-    public $datetime;
+    public $date;
 
     public function index() {
 
+        Authentication::guard('admin');
+
         $this->type = (isset($this->params[0])) && in_array($this->params[0], ['payments', 'growth', 'links']) ? Database::clean_string($this->params[0]) : 'growth';
 
-        $this->datetime = \Altum\Date::get_start_end_dates_new();
+        $start_date = isset($_GET['start_date']) ? Database::clean_string($_GET['start_date']) : (new \DateTime())->modify('-30 day')->format('Y-m-d');
+        $end_date = isset($_GET['end_date']) ? Database::clean_string($_GET['end_date']) : (new \DateTime())->format('Y-m-d');
+
+        $this->date = \Altum\Date::get_start_end_dates($start_date, $end_date);
 
         /* Process only data that is needed for that specific page */
         $type_data = $this->{$this->type}();
@@ -20,7 +26,7 @@ class AdminStatistics extends Controller {
         /* Main View */
         $data = [
             'type' => $this->type,
-            'datetime' => $this->datetime
+            'date' => $this->date
         ];
         $data = array_merge($data, $type_data);
 
@@ -32,10 +38,18 @@ class AdminStatistics extends Controller {
 
     protected function payments() {
 
+        $select_date_format_query = $this->date->start_date == $this->date->end_date ? "DATE_FORMAT(`date`, '%Y-%m-%d %H')" : "DATE_FORMAT(`date`, '%Y-%m-%d')";
+
         $payments_chart = [];
-        $result = database()->query("SELECT COUNT(*) AS `total_payments`, DATE_FORMAT(`date`, '{$this->datetime['query_date_format']}') AS `formatted_date`, TRUNCATE(SUM(`total_amount`), 2) AS `total_amount` FROM `payments` WHERE `date` BETWEEN '{$this->datetime['query_start_date']}' AND '{$this->datetime['query_end_date']}' GROUP BY `formatted_date`");
+        $result = $this->database->query("SELECT COUNT(*) AS `total_payments`, {$select_date_format_query} AS `formatted_date`, TRUNCATE(SUM(`total_amount`), 2) AS `total_amount` FROM `payments` WHERE `date` BETWEEN '{$this->date->start_date_query}' AND '{$this->date->end_date_query}' GROUP BY `formatted_date`");
         while($row = $result->fetch_object()) {
-            $row->formatted_date = $this->datetime['process']($row->formatted_date);
+
+            if($this->date->start_date == $this->date->end_date) {
+                $formatted_date = explode(' ', $row->formatted_date);
+                $row->formatted_date = ((new \DateTime($formatted_date[0]))->setTime($formatted_date[1], 0)->setTimezone(new \DateTimeZone(\Altum\Date::$timezone))->format('H A'));
+            } else {
+                $row->formatted_date = \Altum\Date::get($row->formatted_date, 2);
+            }
 
             $payments_chart[$row->formatted_date] = [
                 'total_amount' => $row->total_amount,
@@ -54,23 +68,31 @@ class AdminStatistics extends Controller {
 
     protected function growth() {
 
+        $select_date_format_query = $this->date->start_date == $this->date->end_date ? "DATE_FORMAT(`date`, '%Y-%m-%d %H')" : "DATE_FORMAT(`date`, '%Y-%m-%d')";
+
         /* Users */
         $users_chart = [];
-        $result = database()->query("
+        $result = $this->database->query("
             SELECT
                  COUNT(*) AS `total`,
-                 DATE_FORMAT(`date`, '{$this->datetime['query_date_format']}') AS `formatted_date`
+                 {$select_date_format_query} AS `formatted_date`
             FROM
                  `users`
             WHERE
-                `date` BETWEEN '{$this->datetime['query_start_date']}' AND '{$this->datetime['query_end_date']}'
+                `date` BETWEEN '{$this->date->start_date_query}' AND '{$this->date->end_date_query}'
             GROUP BY
                 `formatted_date`
             ORDER BY
                 `formatted_date`
         ");
         while($row = $result->fetch_object()) {
-            $row->formatted_date = $this->datetime['process']($row->formatted_date);
+
+            if($this->date->start_date == $this->date->end_date) {
+                $formatted_date = explode(' ', $row->formatted_date);
+                $row->formatted_date = ((new \DateTime($formatted_date[0]))->setTime($formatted_date[1], 0)->setTimezone(new \DateTimeZone(\Altum\Date::$timezone))->format('H A'));
+            } else {
+                $row->formatted_date = \Altum\Date::get($row->formatted_date, 2);
+            }
 
             $users_chart[$row->formatted_date] = [
                 'users' => $row->total
@@ -81,21 +103,27 @@ class AdminStatistics extends Controller {
 
         /* Projects */
         $projects_chart = [];
-        $result = database()->query("
+        $result = $this->database->query("
             SELECT
                  COUNT(*) AS `total`,
-                 DATE_FORMAT(`datetime`, '{$this->datetime['query_date_format']}') AS `formatted_date`
+                 {$select_date_format_query} AS `formatted_date`
             FROM
                  `projects`
             WHERE
-                `datetime` BETWEEN '{$this->datetime['query_start_date']}' AND '{$this->datetime['query_end_date']}'
+                `date` BETWEEN '{$this->date->start_date_query}' AND '{$this->date->end_date_query}'
             GROUP BY
                 `formatted_date`
             ORDER BY
                 `formatted_date`
         ");
         while($row = $result->fetch_object()) {
-            $row->formatted_date = $this->datetime['process']($row->formatted_date);
+
+            if($this->date->start_date == $this->date->end_date) {
+                $formatted_date = explode(' ', $row->formatted_date);
+                $row->formatted_date = ((new \DateTime($formatted_date[0]))->setTime($formatted_date[1], 0)->setTimezone(new \DateTimeZone(\Altum\Date::$timezone))->format('H A'));
+            } else {
+                $row->formatted_date = \Altum\Date::get($row->formatted_date, 2);
+            }
 
             $projects_chart[$row->formatted_date] = [
                 'projects' => $row->total
@@ -106,21 +134,27 @@ class AdminStatistics extends Controller {
 
         /* Links */
         $links_chart = [];
-        $result = database()->query("
+        $result = $this->database->query("
             SELECT
                  COUNT(*) AS `total`,
-                 DATE_FORMAT(`date`, '{$this->datetime['query_date_format']}') AS `formatted_date`
+                 {$select_date_format_query} AS `formatted_date`
             FROM
                  `links`
             WHERE
-                `date` BETWEEN '{$this->datetime['query_start_date']}' AND '{$this->datetime['query_end_date']}'
+                `date` BETWEEN '{$this->date->start_date_query}' AND '{$this->date->end_date_query}'
             GROUP BY
                 `formatted_date`
             ORDER BY
                 `formatted_date`
         ");
         while($row = $result->fetch_object()) {
-            $row->formatted_date = $this->datetime['process']($row->formatted_date);
+
+            if($this->date->start_date == $this->date->end_date) {
+                $formatted_date = explode(' ', $row->formatted_date);
+                $row->formatted_date = ((new \DateTime($formatted_date[0]))->setTime($formatted_date[1], 0)->setTimezone(new \DateTimeZone(\Altum\Date::$timezone))->format('H A'));
+            } else {
+                $row->formatted_date = \Altum\Date::get($row->formatted_date, 2);
+            }
 
             $links_chart[$row->formatted_date] = [
                 'links' => $row->total
@@ -131,21 +165,27 @@ class AdminStatistics extends Controller {
 
         /* Users logs */
         $users_logs_chart = [];
-        $result = database()->query("
+        $result = $this->database->query("
             SELECT
                  COUNT(*) AS `total`,
-                 DATE_FORMAT(`date`, '{$this->datetime['query_date_format']}') AS `formatted_date`
+                 {$select_date_format_query} AS `formatted_date`
             FROM
                  `users_logs`
             WHERE
-                `date` BETWEEN '{$this->datetime['query_start_date']}' AND '{$this->datetime['query_end_date']}'
+                `date` BETWEEN '{$this->date->start_date_query}' AND '{$this->date->end_date_query}'
             GROUP BY
                 `formatted_date`
             ORDER BY
                 `formatted_date`
         ");
         while($row = $result->fetch_object()) {
-            $row->formatted_date = $this->datetime['process']($row->formatted_date);
+
+            if($this->date->start_date == $this->date->end_date) {
+                $formatted_date = explode(' ', $row->formatted_date);
+                $row->formatted_date = ((new \DateTime($formatted_date[0]))->setTime($formatted_date[1], 0)->setTimezone(new \DateTimeZone(\Altum\Date::$timezone))->format('H A'));
+            } else {
+                $row->formatted_date = \Altum\Date::get($row->formatted_date, 2);
+            }
 
             $users_logs_chart[$row->formatted_date] = [
                 'users_logs' => $row->total
@@ -155,16 +195,16 @@ class AdminStatistics extends Controller {
         $users_logs_chart = get_chart_data($users_logs_chart);
 
         /* Redeemed codes */
-        if(in_array(settings()->license->type, ['SPECIAL', 'Extended License'])) {
+        if(in_array($this->settings->license->type, ['SPECIAL', 'Extended License'])) {
             $redeemed_codes_chart = [];
-            $result = database()->query("
+            $result = $this->database->query("
                 SELECT
                      COUNT(*) AS `total`,
-                     DATE_FORMAT(`date`, '{$this->datetime['query_date_format']}') AS `formatted_date`
+                     {$select_date_format_query} AS `formatted_date`
                 FROM
                      `redeemed_codes`
                 WHERE
-                    `date` BETWEEN '{$this->datetime['query_start_date']}' AND '{$this->datetime['query_end_date']}'
+                    `date` BETWEEN '{$this->date->start_date_query}' AND '{$this->date->end_date_query}'
                 GROUP BY
                     `formatted_date`
                 ORDER BY
@@ -197,22 +237,30 @@ class AdminStatistics extends Controller {
     }
     protected function links() {
 
+        $select_date_format_query = $this->date->start_date == $this->date->end_date ? "DATE_FORMAT(`date`, '%Y-%m-%d %H')" : "DATE_FORMAT(`date`, '%Y-%m-%d')";
+
         $track_links_chart = [];
-        $result = database()->query("
+        $result = $this->database->query("
             SELECT
                  COUNT(*) AS `total`,
-                 DATE_FORMAT(`datetime`, '{$this->datetime['query_date_format']}') AS `formatted_date`
+                 {$select_date_format_query} AS `formatted_date`
             FROM
                  `track_links`
             WHERE
-                `datetime` BETWEEN '{$this->datetime['query_start_date']}' AND '{$this->datetime['query_end_date']}'
+                `date` BETWEEN '{$this->date->start_date_query}' AND '{$this->date->end_date_query}'
             GROUP BY
                 `formatted_date`
             ORDER BY
                 `formatted_date`
         ");
         while($row = $result->fetch_object()) {
-            $row->formatted_date = $this->datetime['process']($row->formatted_date);
+
+            if($this->date->start_date == $this->date->end_date) {
+                $formatted_date = explode(' ', $row->formatted_date);
+                $row->formatted_date = ((new \DateTime($formatted_date[0]))->setTime($formatted_date[1], 0)->setTimezone(new \DateTimeZone(\Altum\Date::$timezone))->format('H A'));
+            } else {
+                $row->formatted_date = \Altum\Date::get($row->formatted_date, 2);
+            }
 
             $track_links_chart[$row->formatted_date] = [
                 'track_links' => $row->total

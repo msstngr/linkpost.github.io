@@ -1,5 +1,4 @@
 <?php
-
 /**
  *
  * This file is part of phpFastCache.
@@ -16,13 +15,14 @@ declare(strict_types=1);
 
 namespace Phpfastcache\Drivers\Wincache;
 
-use DateTime;
-use Phpfastcache\Cluster\AggregatablePoolInterface;
-use Phpfastcache\Core\Pool\{DriverBaseTrait, ExtendedCacheItemPoolInterface};
+use Phpfastcache\Core\Pool\{
+    DriverBaseTrait, ExtendedCacheItemPoolInterface
+};
 use Phpfastcache\Entities\DriverStatistic;
-use Phpfastcache\Exceptions\{PhpfastcacheInvalidArgumentException};
+use Phpfastcache\Exceptions\{
+    PhpfastcacheInvalidArgumentException
+};
 use Psr\Cache\CacheItemInterface;
-
 
 /**
  * Class Driver
@@ -30,7 +30,7 @@ use Psr\Cache\CacheItemInterface;
  * @property Config $config Config object
  * @method Config getConfig() Return the config object
  */
-class Driver implements ExtendedCacheItemPoolInterface, AggregatablePoolInterface
+class Driver implements ExtendedCacheItemPoolInterface
 {
     use DriverBaseTrait;
 
@@ -39,23 +39,7 @@ class Driver implements ExtendedCacheItemPoolInterface, AggregatablePoolInterfac
      */
     public function driverCheck(): bool
     {
-        return extension_loaded('wincache') && function_exists('wincache_ucache_set');
-    }
-
-    /**
-     * @return DriverStatistic
-     */
-    public function getStats(): DriverStatistic
-    {
-        $memInfo = wincache_ucache_meminfo();
-        $info = wincache_ucache_info();
-        $date = (new DateTime())->setTimestamp(time() - $info['total_cache_uptime']);
-
-        return (new DriverStatistic())
-            ->setInfo(sprintf("The Wincache daemon is up since %s.\n For more information see RawData.", $date->format(DATE_RFC2822)))
-            ->setSize($memInfo['memory_free'] - $memInfo['memory_total'])
-            ->setData(implode(', ', array_keys($this->itemInstances)))
-            ->setRawData($memInfo);
+        return \extension_loaded('wincache') && \function_exists('wincache_ucache_set');
     }
 
     /**
@@ -66,8 +50,9 @@ class Driver implements ExtendedCacheItemPoolInterface, AggregatablePoolInterfac
         return true;
     }
 
+
     /**
-     * @param CacheItemInterface $item
+     * @param \Psr\Cache\CacheItemInterface $item
      * @return null|array
      */
     protected function driverRead(CacheItemInterface $item)
@@ -82,7 +67,7 @@ class Driver implements ExtendedCacheItemPoolInterface, AggregatablePoolInterfac
     }
 
     /**
-     * @param CacheItemInterface $item
+     * @param \Psr\Cache\CacheItemInterface $item
      * @return mixed
      * @throws PhpfastcacheInvalidArgumentException
      */
@@ -99,7 +84,7 @@ class Driver implements ExtendedCacheItemPoolInterface, AggregatablePoolInterfac
     }
 
     /**
-     * @param CacheItemInterface $item
+     * @param \Psr\Cache\CacheItemInterface $item
      * @return bool
      * @throws PhpfastcacheInvalidArgumentException
      */
@@ -114,6 +99,14 @@ class Driver implements ExtendedCacheItemPoolInterface, AggregatablePoolInterfac
         throw new PhpfastcacheInvalidArgumentException('Cross-Driver type confusion detected');
     }
 
+    /**
+     * @return bool
+     */
+    protected function driverClear(): bool
+    {
+        return wincache_ucache_clear();
+    }
+
     /********************
      *
      * PSR-6 Extended Methods
@@ -121,10 +114,18 @@ class Driver implements ExtendedCacheItemPoolInterface, AggregatablePoolInterfac
      *******************/
 
     /**
-     * @return bool
+     * @return DriverStatistic
      */
-    protected function driverClear(): bool
+    public function getStats(): DriverStatistic
     {
-        return wincache_ucache_clear();
+        $memInfo = wincache_ucache_meminfo();
+        $info = wincache_ucache_info();
+        $date = (new \DateTime())->setTimestamp(\time() - $info['total_cache_uptime']);
+
+        return (new DriverStatistic())
+            ->setInfo(\sprintf("The Wincache daemon is up since %s.\n For more information see RawData.", $date->format(\DATE_RFC2822)))
+            ->setSize($memInfo['memory_free'] - $memInfo['memory_total'])
+            ->setData(\implode(', ', \array_keys($this->itemInstances)))
+            ->setRawData($memInfo);
     }
 }

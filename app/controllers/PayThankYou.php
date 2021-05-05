@@ -10,7 +10,7 @@ class PayThankYou extends Controller {
 
         Authentication::guard();
 
-        if(!settings()->payment->is_enabled) {
+        if(!$this->settings->payment->is_enabled) {
             redirect();
         }
 
@@ -22,14 +22,14 @@ class PayThankYou extends Controller {
             case 'free':
 
                 /* Get the current settings for the free plan */
-                $plan = settings()->plan_free;
+                $plan = $this->settings->plan_free;
 
                 break;
 
             case 'trial':
 
                 /* Get the current settings for the trial plan */
-                $plan = settings()->plan_trial;
+                $plan = $this->settings->plan_trial;
 
                 break;
 
@@ -38,7 +38,7 @@ class PayThankYou extends Controller {
                 $plan_id = (int) $plan_id;
 
                 /* Check if plan exists */
-                if(!$plan = (new \Altum\Models\Plan())->get_plan_by_id($plan_id)) {
+                if(!$plan = (new \Altum\Models\Plan(['settings' => $this->settings]))->get_plan_by_id($plan_id)) {
                     redirect('plan');
                 }
 

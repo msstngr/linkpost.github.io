@@ -1,5 +1,4 @@
 <?php
-
 /**
  *
  * This file is part of phpFastCache.
@@ -51,6 +50,22 @@ class DriverStatistic
     }
 
     /**
+     * @return int Return size in octet or false if no information available
+     */
+    public function getSize(): int
+    {
+        return $this->size;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getData()
+    {
+        return $this->data;
+    }
+
+    /**
      * @param string $info
      * @return $this
      */
@@ -61,13 +76,6 @@ class DriverStatistic
         return $this;
     }
 
-    /**
-     * @return int Return size in octet or false if no information available
-     */
-    public function getSize(): int
-    {
-        return $this->size;
-    }
 
     /**
      * @param int $size
@@ -78,14 +86,6 @@ class DriverStatistic
         $this->size = $size;
 
         return $this;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getData()
-    {
-        return $this->data;
     }
 
     /**

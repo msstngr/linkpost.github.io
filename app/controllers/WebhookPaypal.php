@@ -2,7 +2,9 @@
 
 namespace Altum\Controllers;
 
+use Altum\Database\Database;
 use Altum\Date;
+use Altum\Logger;
 use Altum\Models\User;
 
 class WebhookPaypal extends Controller {
@@ -15,8 +17,8 @@ class WebhookPaypal extends Controller {
         if($payload && $data && $data->event_type == 'PAYMENT.SALE.COMPLETED') {
 
             /* Initiate paypal */
-            $paypal = new \PayPal\Rest\ApiContext(new \PayPal\Auth\OAuthTokenCredential(settings()->paypal->client_id, settings()->paypal->secret));
-            $paypal->setConfig(['mode' => settings()->paypal->mode]);
+            $paypal = new \PayPal\Rest\ApiContext(new \PayPal\Auth\OAuthTokenCredential($this->settings->paypal->client_id, $this->settings->paypal->secret));
+            $paypal->setConfig(['mode' => $this->settings->paypal->mode]);
 
             /* Get the billing agreement */
             try {
@@ -71,7 +73,7 @@ class WebhookPaypal extends Controller {
             }
 
             /* Get the plan details */
-            $plan = db()->where('plan_id', $plan_id)->getOne('plans');
+            $plan = Database::get('*', 'plans', ['plan_id' => $plan_id]);
 
             /* Just make sure the plan is still existing */
             if(!$plan) {
@@ -80,13 +82,13 @@ class WebhookPaypal extends Controller {
             }
 
             /* Make sure the transaction is not already existing */
-            if(db()->where('payment_id', $payment_id)->where('processor', 'stripe')->has('payments')) {
+            if(Database::exists('id', 'payments', ['payment_id' => $payment_id, 'processor' => 'paypal'])) {
                 http_response_code(400);
                 die();
             }
 
             /* Make sure the account still exists */
-            $user = db()->where('user_id', $user_id)->getOne('users', ['user_id', 'email', 'payment_subscription_id', 'billing']);
+            $user = Database::get(['user_id', 'email', 'payment_subscription_id', 'billing'], 'users', ['user_id' => $user_id]);
 
             if(!$user) {
                 http_response_code(400);
@@ -96,7 +98,7 @@ class WebhookPaypal extends Controller {
             /* Unsubscribe from the previous plan if needed */
             if(!empty($user->payment_subscription_id) && $user->payment_subscription_id != $payment_subscription_id) {
                 try {
-                    (new User())->cancel_subscription($user_id);
+                    (new User(['settings' => $this->settings]))->cancel_subscription($user_id);
                 } catch (\Exception $exception) {
 
                     /* Output errors properly */
@@ -109,47 +111,52 @@ class WebhookPaypal extends Controller {
             }
 
             /* Make sure the code exists */
-            $codes_code = db()->where('code', $code)->where('type', 'discount')->getOne('codes');
+            $codes_code = Database::get('*', 'codes', ['code' => $code, 'type' => 'discount']);
 
             if($codes_code) {
                 $code = $codes_code->code;
 
                 /* Check if we should insert the usage of the code or not */
-                if(!db()->where('user_id', $this->user->user_id)->where('code_id', $codes_code->code_id)->has('redeemed_codes')) {
-
+                if(!Database::exists('id', 'redeemed_codes', ['user_id' => $user_id, 'code_id' => $codes_code->code_id])) {
                     /* Update the code usage */
-                    db()->where('code_id', $codes_code->code_id)->update('codes', ['redeemed' => db()->inc()]);
+                    $this->database->query("UPDATE `codes` SET `redeemed` = `redeemed` + 1 WHERE `code_id` = {$codes_code->code_id}");
 
                     /* Add log for the redeemed code */
-                    db()->insert('redeemed_codes', [
+                    Database::insert('redeemed_codes', [
                         'code_id'   => $codes_code->code_id,
                         'user_id'   => $user_id,
                         'date'      => \Altum\Date::$date
                     ]);
+
+                    Logger::users($user_id, 'codes.redeemed_code=' . $codes_code->code);
                 }
             }
 
             /* Add a log into the database */
-            $payment_id = db()->insert('payments', [
-                'user_id' => $user_id,
-                'plan_id' => $plan_id,
-                'processor' => 'paypal',
-                'type' => $payment_type,
-                'frequency' => $payment_frequency,
-                'code' => $code,
-                'discount_amount' => $discount_amount,
-                'base_amount' => $base_amount,
-                'email' => $payer_email,
-                'payment_id' => $payment_id,
-                'subscription_id' => $subscription_id,
-                'payer_id' => $payer_id,
-                'name' => $payer_name,
-                'billing' => settings()->payment->taxes_and_billing_is_enabled && $user->billing ? $user->billing : null,
-                'taxes_ids' => !empty($taxes_ids) ? $taxes_ids : null,
-                'total_amount' => $payment_total,
-                'currency' => $payment_currency,
-                'date' => \Altum\Date::$date
-            ]);
+            Database::insert(
+                'payments',
+                [
+                    'user_id' => $user_id,
+                    'plan_id' => $plan_id,
+                    'processor' => 'paypal',
+                    'type' => $payment_type,
+                    'frequency' => $payment_frequency,
+                    'code' => $code,
+                    'discount_amount' => $discount_amount,
+                    'base_amount' => $base_amount,
+                    'email' => $payer_email,
+                    'payment_id' => $payment_id,
+                    'subscription_id' => $subscription_id,
+                    'payer_id' => $payer_id,
+                    'name' => $payer_name,
+                    'billing' => $this->settings->payment->taxes_and_billing_is_enabled && $user->billing ? $user->billing : null,
+                    'taxes_ids' => !empty($taxes_ids) ? $taxes_ids : null,
+                    'total_amount' => $payment_total,
+                    'currency' => $payment_currency,
+                    'date' => \Altum\Date::$date
+                ],
+                false
+            );
 
             /* Update the user with the new plan */
             switch($payment_frequency) {
@@ -166,13 +173,18 @@ class WebhookPaypal extends Controller {
                     break;
             }
 
-            /* Database query */
-            db()->where('user_id', $user_id)->update('users', [
-                'plan_id' => $plan_id,
-                'plan_settings' => $plan->settings,
-                'plan_expiration_date' => $plan_expiration_date,
-                'payment_subscription_id' => $payment_subscription_id
-            ]);
+            Database::update(
+                'users',
+                [
+                    'plan_id' => $plan_id,
+                    'plan_expiration_date' => $plan_expiration_date,
+                    'plan_settings' => $plan->settings,
+                    'payment_subscription_id' => $payment_subscription_id
+                ],
+                [
+                    'user_id' => $user_id
+                ]
+            );
 
             /* Clear the cache */
             \Altum\Cache::$adapter->deleteItemsByTag('user_id=' . $user_id);
@@ -181,28 +193,30 @@ class WebhookPaypal extends Controller {
             /* Prepare the email */
             $email_template = get_email_template(
                 [],
-                language()->global->emails->user_payment->subject,
+                $this->language->global->emails->user_payment->subject,
                 [
                     '{{PLAN_EXPIRATION_DATE}}' => Date::get($plan_expiration_date, 2),
-                    '{{USER_PLAN_LINK}}' => url('account-plan'),
+                    '{{USER_PACKAGE_LINK}}' => url('account-plan'),
                     '{{USER_PAYMENTS_LINK}}' => url('account-payments'),
                 ],
-                language()->global->emails->user_payment->body
+                $this->language->global->emails->user_payment->body
             );
 
             send_mail(
+                $this->settings,
                 $user->email,
                 $email_template->subject,
                 $email_template->body
             );
 
             /* Send notification to admin if needed */
-            if(settings()->email_notifications->new_payment && !empty(settings()->email_notifications->emails)) {
+            if($this->settings->email_notifications->new_payment && !empty($this->settings->email_notifications->emails)) {
 
                 send_mail(
-                    explode(',', settings()->email_notifications->emails),
-                    sprintf(language()->global->emails->admin_new_payment_notification->subject, 'paypal', $payment_total, $payment_currency),
-                    sprintf(language()->global->emails->admin_new_payment_notification->body, $payment_total, $payment_currency)
+                    $this->settings,
+                    explode(',', $this->settings->email_notifications->emails),
+                    sprintf($this->language->global->emails->admin_new_payment_notification->subject, 'paypal', $payment_total, $payment_currency),
+                    sprintf($this->language->global->emails->admin_new_payment_notification->body, $payment_total, $payment_currency)
                 );
 
             }

@@ -2,19 +2,20 @@
 
 namespace Altum\Controllers;
 
-use Altum\Alerts;
 use Altum\Captcha;
 use Altum\Database\Database;
+use Altum\Language;
 use Altum\Logger;
 use Altum\Middlewares\Authentication;
 use Altum\Models\User;
+use MaxMind\Db\Reader;
 
 class Register extends Controller {
 
     public function index() {
 
         /* Check if Registration is enabled first */
-        if(!settings()->register_is_enabled) {
+        if(!$this->settings->register_is_enabled) {
             redirect();
         }
 
@@ -30,13 +31,17 @@ class Register extends Controller {
         ];
 
         /* Initiate captcha */
-        $captcha = new Captcha();
+        $captcha = new Captcha([
+            'type' => $this->settings->captcha->type,
+            'recaptcha_public_key' => $this->settings->captcha->recaptcha_public_key,
+            'recaptcha_private_key' => $this->settings->captcha->recaptcha_private_key
+        ]);
 
         /* Facebook Login / Register */
-        if(settings()->facebook->is_enabled && !empty(settings()->facebook->app_id) && !empty(settings()->facebook->app_secret)) {
+        if($this->settings->facebook->is_enabled && !empty($this->settings->facebook->app_id) && !empty($this->settings->facebook->app_secret)) {
             $facebook = new \Facebook\Facebook([
-                'app_id' => settings()->facebook->app_id,
-                'app_secret' => settings()->facebook->app_secret,
+                'app_id' => $this->settings->facebook->app_id,
+                'app_secret' => $this->settings->facebook->app_secret,
                 'default_graph_version' => 'v3.2',
             ]);
 
@@ -53,72 +58,77 @@ class Register extends Controller {
             $values['email'] = $_POST['email'];
             $values['password'] = $_POST['password'];
 
-            /* Check for any errors */
+            /* Define some variables */
             $required_fields = ['name', 'email' ,'password'];
+
+            /* Check for the required fields */
             foreach($required_fields as $field) {
                 if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]))) {
-                    Alerts::add_field_error($field, language()->global->error_message->empty_field);
+                    $_SESSION['error'][] = $this->language->global->error_message->empty_fields;
+                    break 1;
                 }
             }
 
-            if(settings()->captcha->register_is_enabled && !$captcha->is_valid()) {
-                Alerts::add_field_error('captcha', language()->global->error_message->invalid_captcha);
+            if($this->settings->captcha->register_is_enabled && !$captcha->is_valid()) {
+                $_SESSION['error'][] = $this->language->global->error_message->invalid_captcha;
             }
             if(strlen($_POST['name']) < 3 || strlen($_POST['name']) > 32) {
-                Alerts::add_field_error('name', language()->register->error_message->name_length);
+                $_SESSION['error'][] = $this->language->register->error_message->name_length;
             }
-            if(db()->where('email', $_POST['email'])->has('users')) {
-                Alerts::add_field_error('email', language()->register->error_message->email_exists);
+            if(Database::exists('user_id', 'users', ['email' => $_POST['email']])) {
+                $_SESSION['error'][] = $this->language->register->error_message->email_exists;
             }
             if(!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
-                Alerts::add_field_error('email', language()->register->error_message->invalid_email);
+                $_SESSION['error'][] = $this->language->register->error_message->invalid_email;
             }
             if(strlen(trim($_POST['password'])) < 6) {
-                Alerts::add_field_error('password', language()->register->error_message->short_password);
+                $_SESSION['error'][] = $this->language->register->error_message->short_password;
             }
 
             /* If there are no errors continue the registering process */
-            if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
+            if(empty($_SESSION['error'])) {
                 /* Define some needed variables */
-                $active 	                = (int) !settings()->email_confirmation;
+                $active 	                = (int) !$this->settings->email_confirmation;
                 $email_code                 = md5($_POST['email'] . microtime());
 
                 /* Determine what plan is set by default */
                 $plan_id                    = 'free';
-                $plan_settings              = json_encode(settings()->plan_free->settings);
+                $plan_settings              = json_encode($this->settings->plan_free->settings);
                 $plan_expiration_date       = \Altum\Date::$date;
 
                 /* When only the trial package is available make that the default one */
-                if(!settings()->plan_free->status && settings()->plan_trial->status) {
+                if(!$this->settings->plan_free->status && $this->settings->plan_trial->status) {
                     $plan_id                = 'trial';
-                    $plan_settings          = json_encode(settings()->plan_trial->settings);
-                    $plan_expiration_date   = (new \DateTime())->modify('+' . settings()->plan_trial->days . ' days')->format('Y-m-d H:i:s');
+                    $plan_settings          = json_encode($this->settings->plan_trial->settings);
+                    $plan_expiration_date   = (new \DateTime())->modify('+' . $this->settings->plan_trial->days . ' days')->format('Y-m-d H:i:s');
                 }
 
                 $registered_user_id = (new User())->create(
                     $_POST['email'],
                     $_POST['password'],
                     $_POST['name'],
-                    (int) !settings()->email_confirmation,
+                    (int) !$this->settings->email_confirmation,
                     $email_code,
                     null,
                     $plan_id,
                     $plan_settings,
                     $plan_expiration_date,
-                    settings()->default_timezone
+                    $this->settings->default_timezone
                 );
 
                 /* Log the action */
-                Logger::users($registered_user_id, 'register.success');
+                Logger::users($registered_user_id, 'register.register');
 
                 /* Send notification to admin if needed */
-                if(settings()->email_notifications->new_user && !empty(settings()->email_notifications->emails)) {
+                if($this->settings->email_notifications->new_user && !empty($this->settings->email_notifications->emails)) {
 
                     send_mail(
-                        explode(',', settings()->email_notifications->emails),
-                        language()->global->emails->admin_new_user_notification->subject,
-                        sprintf(language()->global->emails->admin_new_user_notification->body, $_POST['name'], $_POST['email'])
+                        $this->settings,
+                        explode(',', $this->settings->email_notifications->emails),
+                        $this->language->global->emails->admin_new_user_notification->subject,
+                        sprintf($this->language->global->emails->admin_new_user_notification->body, $_POST['name'], $_POST['email'])
                     );
+
 
                 }
 
@@ -126,9 +136,9 @@ class Register extends Controller {
                 if($active == '1') {
 
                     /* Send webhook notification if needed */
-                    if(settings()->webhooks->user_new) {
+                    if($this->settings->webhooks->user_new) {
 
-                        \Unirest\Request::post(settings()->webhooks->user_new, [], [
+                        \Unirest\Request::post($this->settings->webhooks->user_new, [], [
                             'user_id' => $registered_user_id,
                             'email' => $_POST['email'],
                             'name' => $_POST['name']
@@ -136,10 +146,8 @@ class Register extends Controller {
 
                     }
 
-                    /* Set a nice success message */
-                    Alerts::add_success(language()->register->success_message->login);
-
                     $_SESSION['user_id'] = $registered_user_id;
+                    $_SESSION['success'] = $this->language->register->success_message->login;
 
                     Logger::users($registered_user_id, 'login.success');
 
@@ -151,18 +159,17 @@ class Register extends Controller {
                         [
                             '{{NAME}}' => $_POST['name'],
                         ],
-                        language()->global->emails->user_activation->subject,
+                        $this->language->global->emails->user_activation->subject,
                         [
                             '{{ACTIVATION_LINK}}' => url('activate-user?email=' . md5($_POST['email']) . '&email_activation_code=' . $email_code . '&type=user_activation' . '&redirect=' . $redirect),
                             '{{NAME}}' => $_POST['name'],
                         ],
-                        language()->global->emails->user_activation->body
+                        $this->language->global->emails->user_activation->body
                     );
 
-                    send_mail($_POST['email'], $email_template->subject, $email_template->body);
+                    send_mail($this->settings, $_POST['email'], $email_template->subject, $email_template->body);
 
-                    /* Set a nice success message */
-                    Alerts::add_success(language()->register->success_message->registration);
+                    $_SESSION['success'][] = $this->language->register->success_message->registration;
                 }
 
             }

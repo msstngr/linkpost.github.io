@@ -4,10 +4,8 @@ include_once __DIR__ . '/bootstrap.php';
 
 use WhichBrowser\Testrunner;
 use WhichBrowser\Tests;
-use SebastianBergmann\CodeCoverage\CodeCoverage;
-use SebastianBergmann\CodeCoverage\Report\Clover;
 
-set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+set_error_handler(function ($errno, $errstr, $errfile, $errline, array $errcontext) {
     // error was suppressed with the @-operator
     if (0 === error_reporting()) {
         return false;
@@ -52,7 +50,7 @@ switch ($command) {
 
     case 'check':
         if (in_array('coverage', $options)) {
-            $coverage = new CodeCoverage;
+            $coverage = new PHP_CodeCoverage;
             $coverage->filter()->addDirectoryToWhitelist('src');
             $coverage->start('Testrunner');
         }
@@ -62,7 +60,7 @@ switch ($command) {
         if (in_array('coverage', $options)) {
             $coverage->stop();
 
-            $writer = new Clover;
+            $writer = new PHP_CodeCoverage_Report_Clover;
             $writer->process($coverage, 'runner.xml');
 
             echo "\nCoverage saved as runner.xml\n\n";

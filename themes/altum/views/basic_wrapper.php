@@ -1,12 +1,12 @@
 <?php defined('ALTUMCODE') || die() ?>
 <!DOCTYPE html>
-<html lang="<?= language()->language_code ?>">
+<html lang="<?= $this->language->language_code ?>">
     <head>
         <title><?= \Altum\Title::get() ?></title>
         <base href="<?= SITE_URL; ?>">
         <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <meta http-equiv="content-language" content="<?= language()->language_code ?>" />
+        <meta http-equiv="content-language" content="<?= $this->language->language_code ?>" />
 
         <?php if(\Altum\Meta::$description): ?>
             <meta name="description" content="<?= \Altum\Meta::$description ?>" />
@@ -15,8 +15,8 @@
             <meta name="keywords" content="<?= \Altum\Meta::$keywords ?>" />
         <?php endif ?>
 
-        <?php if(!empty(settings()->favicon)): ?>
-            <link href="<?= SITE_URL . UPLOADS_URL_PATH . 'favicon/' . settings()->favicon ?>" rel="shortcut icon" />
+        <?php if(!empty($this->settings->favicon)): ?>
+            <link href="<?= SITE_URL . UPLOADS_URL_PATH . 'favicon/' . $this->settings->favicon ?>" rel="shortcut icon" />
         <?php endif ?>
 
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
@@ -28,12 +28,12 @@
 
         <?= \Altum\Event::get_content('head') ?>
 
-        <?php if(!empty(settings()->custom->head_js)): ?>
-            <?= settings()->custom->head_js ?>
+        <?php if(!empty($this->settings->custom->head_js)): ?>
+            <?= $this->settings->custom->head_js ?>
         <?php endif ?>
 
-        <?php if(!empty(settings()->custom->head_css)): ?>
-            <style><?= settings()->custom->head_css ?></style>
+        <?php if(!empty($this->settings->custom->head_css)): ?>
+            <style><?= $this->settings->custom->head_css ?></style>
         <?php endif ?>
     </head>
 
@@ -44,10 +44,10 @@
             <div class="container mt-8 mb-5">
                 <div class="d-flex justify-content-center">
                     <a href="<?= url() ?>">
-                        <?php if(settings()->logo != ''): ?>
-                            <img src="<?= SITE_URL . UPLOADS_URL_PATH . 'logo/' . settings()->logo ?>" class="img-fluid navbar-logo" alt="<?= language()->global->accessibility->logo_alt ?>" />
+                        <?php if($this->settings->logo != ''): ?>
+                            <img src="<?= SITE_URL . UPLOADS_URL_PATH . 'logo/' . $this->settings->logo ?>" class="img-fluid navbar-logo" alt="<?= $this->language->global->accessibility->logo_alt ?>" />
                         <?php else: ?>
-                            <h1><?= settings()->title ?></h1>
+                            <h1><?= $this->settings->title ?></h1>
                         <?php endif ?>
                     </a>
                 </div>

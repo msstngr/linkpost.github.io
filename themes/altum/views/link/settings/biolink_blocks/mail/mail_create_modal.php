@@ -5,13 +5,13 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title"><?= language()->create_biolink_mail_modal->header ?></h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="<?= language()->global->close ?>">
+                <h5 class="modal-title"><?= $this->language->create_biolink_mail_modal->header ?></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="<?= $this->language->global->close ?>">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
 
-            <p class="text-muted modal-subheader"><?= language()->create_biolink_mail_modal->subheader ?></p>
+            <p class="text-muted modal-subheader"><?= $this->language->create_biolink_mail_modal->subheader ?></p>
 
             <div class="modal-body">
                 <form name="create_biolink_mail" method="post" role="form">
@@ -24,12 +24,12 @@
                     <div class="notification-container"></div>
 
                     <div class="form-group">
-                        <label><i class="fa fa-fw fa-paragraph fa-sm mr-1"></i> <?= language()->create_biolink_link_modal->input->name ?></label>
+                        <label><i class="fa fa-fw fa-paragraph fa-sm mr-1"></i> <?= $this->language->create_biolink_link_modal->input->name ?></label>
                         <input type="text" name="name" class="form-control" required="required" />
                     </div>
 
                     <div class="text-center mt-4">
-                        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= language()->global->submit ?></button>
+                        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= $this->language->global->submit ?></button>
                     </div>
                 </form>
             </div>

@@ -5,8 +5,8 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title"><?= language()->biolink_link_create_modal->header ?></h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="<?= language()->global->close ?>">
+                <h5 class="modal-title"><?= $this->language->biolink_link_create_modal->header ?></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="<?= $this->language->global->close ?>">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -23,9 +23,9 @@
                                 class="btn btn-block mb-3"
                                 <?= $this->user->plan_settings->enabled_biolink_blocks->{$key} ? null : 'disabled="disabled"' ?>
                         >
-                            <i class="fa fa-fw fa-circle fa-sm mr-1" style="color: <?= language()->link->biolink->{$key}->color ?>"></i>
+                            <i class="fa fa-fw fa-circle fa-sm mr-1" style="color: <?= $this->language->link->biolink->{$key}->color ?>"></i>
 
-                            <?= language()->link->biolink->{$key}->name ?>
+                            <?= $this->language->link->biolink->{$key}->name ?>
                         </button>
                     </div>
                 <?php endforeach ?>

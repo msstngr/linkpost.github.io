@@ -10,11 +10,11 @@
     <div class="notification-container"></div>
 
     <div class="form-group">
-        <label><i class="fa fa-fw fa-signature fa-sm mr-1"></i> <?= language()->create_biolink_twitch_modal->input->location_url ?></label>
-        <input type="text" class="form-control" name="location_url" value="<?= $row->location_url ?>" placeholder="<?= language()->create_biolink_twitch_modal->input->location_url_placeholder ?>" required="required" />
+        <label><i class="fa fa-fw fa-signature fa-sm mr-1"></i> <?= $this->language->create_biolink_twitch_modal->input->location_url ?></label>
+        <input type="text" class="form-control" name="location_url" value="<?= $row->location_url ?>" placeholder="<?= $this->language->create_biolink_twitch_modal->input->location_url_placeholder ?>" required="required" />
     </div>
 
     <div class="mt-4">
-        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= language()->global->update ?></button>
+        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= $this->language->global->update ?></button>
     </div>
 </form>

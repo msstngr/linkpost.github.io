@@ -2,7 +2,7 @@
 
 <div class="card my-3">
     <div class="card-body">
-        <h3 class="h5"><?= sprintf(language()->link->statistics->utm_campaign, $data->utm_source, $data->utm_medium) ?></h3>
+        <h3 class="h5"><?= sprintf($this->language->link->statistics->utm_campaign, $data->utm_source, $data->utm_medium) ?></h3>
 
         <?php foreach($data->rows as $row): ?>
             <?php $percentage = round($row->total / $data->total_sum * 100, 1) ?>

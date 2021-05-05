@@ -1,5 +1,4 @@
 <?php
-
 /**
  *
  * This file is part of phpFastCache.
@@ -16,12 +15,14 @@ declare(strict_types=1);
 
 namespace Phpfastcache\Drivers\Devtrue;
 
-use DateTime;
-use Phpfastcache\Core\Pool\{DriverBaseTrait, ExtendedCacheItemPoolInterface};
+use Phpfastcache\Core\Pool\{
+    DriverBaseTrait, ExtendedCacheItemPoolInterface
+};
 use Phpfastcache\Entities\DriverStatistic;
-use Phpfastcache\Exceptions\{PhpfastcacheInvalidArgumentException};
+use Phpfastcache\Exceptions\{
+    PhpfastcacheInvalidArgumentException
+};
 use Psr\Cache\CacheItemInterface;
-
 
 /**
  * Class Driver
@@ -42,21 +43,7 @@ class Driver implements ExtendedCacheItemPoolInterface
     }
 
     /**
-     * @return DriverStatistic
-     */
-    public function getStats(): DriverStatistic
-    {
-        $stat = new DriverStatistic();
-        $stat->setInfo('[Devtrue] A void info string')
-            ->setSize(0)
-            ->setData(implode(', ', array_keys($this->itemInstances)))
-            ->setRawData(true);
-
-        return $stat;
-    }
-
-    /**
-     * @param CacheItemInterface $item
+     * @param \Psr\Cache\CacheItemInterface $item
      * @return mixed
      * @throws PhpfastcacheInvalidArgumentException
      */
@@ -73,7 +60,7 @@ class Driver implements ExtendedCacheItemPoolInterface
     }
 
     /**
-     * @param CacheItemInterface $item
+     * @param \Psr\Cache\CacheItemInterface $item
      * @return array
      */
     protected function driverRead(CacheItemInterface $item): array
@@ -81,12 +68,12 @@ class Driver implements ExtendedCacheItemPoolInterface
         return [
             self::DRIVER_DATA_WRAPPER_INDEX => true,
             self::DRIVER_TAGS_WRAPPER_INDEX => [],
-            self::DRIVER_EDATE_WRAPPER_INDEX => new DateTime(),
+            self::DRIVER_EDATE_WRAPPER_INDEX => new \DateTime(),
         ];
     }
 
     /**
-     * @param CacheItemInterface $item
+     * @param \Psr\Cache\CacheItemInterface $item
      * @return bool
      * @throws PhpfastcacheInvalidArgumentException
      */
@@ -110,6 +97,22 @@ class Driver implements ExtendedCacheItemPoolInterface
         return false;
     }
 
+    /**
+     * @return bool
+     */
+    protected function driverConnect(): bool
+    {
+        return false;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public static function isUsableInAutoContext(): bool
+    {
+        return false;
+    }
+
     /********************
      *
      * PSR-6 Extended Methods
@@ -117,10 +120,16 @@ class Driver implements ExtendedCacheItemPoolInterface
      *******************/
 
     /**
-     * @return bool
+     * @return DriverStatistic
      */
-    protected function driverConnect(): bool
+    public function getStats(): DriverStatistic
     {
-        return false;
+        $stat = new DriverStatistic();
+        $stat->setInfo('[Devtrue] A void info string')
+            ->setSize(0)
+            ->setData(\implode(', ', \array_keys($this->itemInstances)))
+            ->setRawData(true);
+
+        return $stat;
     }
 }

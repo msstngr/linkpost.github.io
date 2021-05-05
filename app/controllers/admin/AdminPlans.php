@@ -2,23 +2,26 @@
 
 namespace Altum\Controllers;
 
-use Altum\Alerts;
+use Altum\Database\Database;
 use Altum\Middlewares\Csrf;
+use Altum\Middlewares\Authentication;
 use Altum\Models\User;
 
 class AdminPlans extends Controller {
 
     public function index() {
 
+        Authentication::guard('admin');
+
         /* Delete Modal */
         $view = new \Altum\Views\View('admin/plans/plan_delete_modal', (array) $this);
         \Altum\Event::add_content($view->run(), 'modals');
 
-        $plans = db()->get('plans');
+        $plans_result = Database::$database->query("SELECT * FROM plans ORDER BY plan_id ASC");
 
         /* Main View */
         $data = [
-            'plans' => $plans
+            'plans_result' => $plans_result
         ];
 
         $view = new \Altum\Views\View('admin/plans/index', (array) $this);
@@ -29,21 +32,22 @@ class AdminPlans extends Controller {
 
     public function delete() {
 
-        $plan_id = isset($this->params[0]) ? $this->params[0] : null;
+        Authentication::guard();
+
+        $plan_id = (isset($this->params[0])) ? $this->params[0] : false;
 
         if(!Csrf::check('global_token')) {
-            Alerts::add_error(language()->global->error_message->invalid_csrf_token);
-            redirect('admin/plans');
+            $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
         }
 
-        if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
+        if(empty($_SESSION['error'])) {
 
             /* Get all the users with this plan that have subscriptions and cancel them */
-            $result = database()->query("SELECT `user_id`, `payment_subscription_id` FROM `users` WHERE `plan_id` = {$plan_id} AND `payment_subscription_id` <> ''");
+            $result = $this->database->query("SELECT `user_id`, `payment_subscription_id` FROM `users` WHERE `plan_id` = {$plan_id} AND `payment_subscription_id` <> ''");
 
             while($row = $result->fetch_object()) {
                 try {
-                    (new User(['user' => $row]))->cancel_subscription();
+                    (new User(['settings' => $this->settings, 'user' => $row]))->cancel_subscription();
                 } catch (\Exception $exception) {
 
                     /* Output errors properly */
@@ -56,17 +60,14 @@ class AdminPlans extends Controller {
                 }
 
                 /* Change the user plan to custom and leave their current features they paid for on */
-                db()->where('user_id', $row->user_id)->update('users', ['plan_id' => 'custom']);
+                $this->database->query("UPDATE `users` SET `plan_id` = 'custom' WHERE `user_id` = {$row->user_id}");
 
                 /* Clear the cache */
                 \Altum\Cache::$adapter->deleteItemsByTag('user_id=' . $row->user_id);
             }
 
             /* Delete the plan */
-            db()->where('plan_id', $plan_id)->delete('plans');
-
-            /* Set a nice success message */
-            Alerts::add_success(language()->admin_plan_delete_modal->success_message);
+            Database::$database->query("DELETE FROM plans WHERE plan_id = {$plan_id}");
 
         }
 
