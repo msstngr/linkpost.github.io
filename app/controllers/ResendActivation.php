@@ -2,9 +2,8 @@
 
 namespace Altum\Controllers;
 
+use Altum\Alerts;
 use Altum\Captcha;
-use Altum\Database\Database;
-use Altum\Language;
 use Altum\Middlewares\Authentication;
 
 class ResendActivation extends Controller {
@@ -19,11 +18,7 @@ class ResendActivation extends Controller {
         ];
 
         /* Initiate captcha */
-        $captcha = new Captcha([
-            'type' => $this->settings->captcha->type,
-            'recaptcha_public_key' => $this->settings->captcha->recaptcha_public_key,
-            'recaptcha_private_key' => $this->settings->captcha->recaptcha_private_key
-        ]);
+        $captcha = new Captcha();
 
         if(!empty($_POST)) {
             /* Clean the posted variable */
@@ -31,44 +26,45 @@ class ResendActivation extends Controller {
             $values['email'] = $_POST['email'];
 
             /* Check for any errors */
-            if($this->settings->captcha->resend_activation_is_enabled && !$captcha->is_valid()) {
-                $_SESSION['error'][] = $this->language->global->error_message->invalid_captcha;
+            if(settings()->captcha->resend_activation_is_enabled && !$captcha->is_valid()) {
+                Alerts::add_field_error('captcha', language()->global->error_message->invalid_captcha);
             }
 
             /* If there are no errors, resend the activation link */
-            if(empty($_SESSION['error'])) {
-                $this_account = Database::get(['user_id', 'active', 'name', 'email', 'language'], 'users', ['email' => $_POST['email']]);
+            if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
 
-                if($this_account && !(bool) $this_account->active) {
+                $user = db()->where('email', $_POST['email'])->getOne('users', ['user_id', 'active', 'name', 'email', 'language']);
+
+                if($user && !$user->active) {
                     /* Generate new email code */
                     $email_code = md5($_POST['email'] . microtime());
 
                     /* Update the current activation email */
-                    Database::$database->query("UPDATE `users` SET `email_activation_code` = '{$email_code}' WHERE `user_id` = {$this_account->user_id}");
+                    db()->where('user_id', $user->user_id)->update('users', ['email_activation_code' => $email_code]);
 
                     /* Get the language for the user */
-                    $language = Language::get($this_account->language);
+                    $language = language($user->language);
 
                     /* Prepare the email */
                     $email_template = get_email_template(
                         [
-                            '{{NAME}}' => $this_account->name,
+                            '{{NAME}}' => $user->name,
                         ],
                         $language->global->emails->user_activation->subject,
                         [
                             '{{ACTIVATION_LINK}}' => url('activate-user?email=' . md5($_POST['email']) . '&email_activation_code=' . $email_code . '&type=user_activation'),
-                            '{{NAME}}' => $this_account->name,
+                            '{{NAME}}' => $user->name,
                         ],
                         $language->global->emails->user_activation->body
                     );
 
                     /* Send the email */
-                    send_mail($this->settings, $_POST['email'], $email_template->subject, $email_template->body);
+                    send_mail($_POST['email'], $email_template->subject, $email_template->body);
 
                 }
 
-                /* Store success message */
-                $_SESSION['success'][] = $this->language->resend_activation->notice_message->success;
+                /* Set a nice success message */
+                Alerts::add_success(language()->resend_activation->success_message);
             }
         }
 

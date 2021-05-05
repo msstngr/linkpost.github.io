@@ -2,7 +2,6 @@
 
 namespace Altum\Controllers;
 
-use Altum\Database\Database;
 use Altum\Middlewares\Authentication;
 use Altum\Models\Plan;
 
@@ -12,10 +11,10 @@ class Invoice extends Controller {
 
         Authentication::guard();
 
-        $id = isset($this->params[0]) ? (int) $this->params[0] : false;
+        $id = isset($this->params[0]) ? (int) $this->params[0] : null;
 
         /* Make sure the campaign exists and is accessible to the user */
-        if(!$payment = Database::get('*', 'payments', ['id' => $id])) {
+        if(!$payment = db()->where('id', $id)->getOne('payments')) {
             redirect('dashboard');
         }
 
@@ -27,7 +26,7 @@ class Invoice extends Controller {
         $payment->billing = json_decode($payment->billing);
 
         /* Get the plan details */
-        $payment->plan = (new Plan(['settings' => $this->settings]))->get_plan_by_id($payment->plan_id);
+        $payment->plan = (new Plan())->get_plan_by_id($payment->plan_id);
 
         /* Check for potential taxes */
         $payment_taxes = (new \Altum\Models\Plan())->get_plan_taxes_by_taxes_ids($payment->taxes_ids);

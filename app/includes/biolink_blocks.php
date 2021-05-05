@@ -16,17 +16,6 @@ return array_merge(
         'twitch',
         'vimeo',
         'tiktok',
-		
-		'applemusic',
-		'tidal',
-		'anchor',
-		'twitter_tweet',
-		'instagram_media',
-		'rss_feed',
-		'custom_html',
-		'vcard',
-		'image_grid',
-		'divider'
     ]
 );
 

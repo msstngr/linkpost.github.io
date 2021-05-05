@@ -2,19 +2,13 @@
 
 namespace Altum\Controllers;
 
+use Altum\Alerts;
 use Altum\Database\Database;
 use Altum\Middlewares\Csrf;
-use Altum\Models\Plan;
-use Altum\Models\User;
-use Altum\Middlewares\Authentication;
-use Altum\Response;
-use Altum\Routing\Router;
 
 class AdminPagesCategoryCreate extends Controller {
 
     public function index() {
-
-        Authentication::guard('admin');
 
         if(!empty($_POST)) {
             /* Filter some the variables */
@@ -24,29 +18,33 @@ class AdminPagesCategoryCreate extends Controller {
             $_POST['icon'] = Database::clean_string($_POST['icon']);
             $_POST['order'] = (int) $_POST['order'] ?? 0;
 
-            $required_fields = ['url', 'title'];
-
-            /* Check for the required fields */
+            /* Check for any errors */
+            $required_fields = ['title', 'url'];
             foreach($required_fields as $field) {
                 if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]))) {
-                    $_SESSION['error'][] = $this->language->global->error_message->empty_fields;
-                    break 1;
+                    Alerts::add_field_error($field, language()->global->error_message->empty_field);
                 }
             }
 
             if(!Csrf::check()) {
-                $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
+                Alerts::add_error(language()->global->error_message->invalid_csrf_token);
             }
 
-            /* If there are no errors continue the process */
-            if(empty($_SESSION['error'])) {
-                $stmt = Database::$database->prepare("INSERT INTO `pages_categories` (`url`, `title`, `description`, `icon`, `order`) VALUES (?, ?, ?, ?, ?)");
-                $stmt->bind_param('sssss', $_POST['url'], $_POST['title'], $_POST['description'], $_POST['icon'], $_POST['order']);
-                $stmt->execute();
-                $stmt->close();
+            /* If there are no errors, continue */
+            if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
+
+                /* Database query */
+                db()->insert('pages_categories', [
+                    'url' => $_POST['url'],
+                    'title' => $_POST['title'],
+                    'description' => $_POST['description'],
+                    'icon' => $_POST['icon'],
+                    'order' => $_POST['order'],
+                ]);
 
                 /* Set a nice success message */
-                $_SESSION['success'][] = $this->language->global->success_message->basic;
+                Alerts::add_success(language()->global->success_message->basic);
+
                 redirect('admin/pages');
             }
 

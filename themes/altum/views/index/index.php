@@ -2,20 +2,20 @@
 
 <div class="index-container">
     <div class="container">
-        <?php display_notifications() ?>
+        <?= \Altum\Alerts::output_alerts() ?>
 
         <?php if($data->is_custom_domain): ?>
-        <span class="badge badge-primary"><?=  $this->language->index->is_custom_domain ?></span>
+        <span class="badge badge-primary"><?=  language()->index->is_custom_domain ?></span>
         <?php endif ?>
 
         <div class="row">
             <div class="col">
                 <div class="text-left">
-                    <h1 class="index-header mb-4"><?= $this->language->index->header ?></h1>
-                    <p class="index-subheader text-gray-700 mb-5"><?= $this->language->index->subheader ?></p>
+                    <h1 class="index-header mb-4"><?= language()->index->header ?></h1>
+                    <p class="index-subheader text-gray-700 mb-5"><?= language()->index->subheader ?></p>
 
                     <div>
-                        <a href="<?= url('register') ?>" class="btn btn-primary index-button"><?= $this->language->index->sign_up ?></a>
+                        <a href="<?= url('register') ?>" class="btn btn-primary index-button"><?= language()->index->sign_up ?></a>
                     </div>
                 </div>
             </div>
@@ -40,9 +40,9 @@
                   <i class="fa fa-globe fa-stack-1x text-primary"></i>
                 </span>
 
-                <h2 class="mt-3"><?= $this->language->index->presentation1->header ?></h2>
+                <h2 class="mt-3"><?= language()->index->presentation1->header ?></h2>
 
-                <p class="mt-3"><?= $this->language->index->presentation1->subheader ?></p>
+                <p class="mt-3"><?= language()->index->presentation1->subheader ?></p>
             </div>
         </div>
     </div>
@@ -57,9 +57,9 @@
                   <i class="fa fa-users fa-stack-1x text-primary"></i>
                 </span>
 
-                <h2 class="mt-3"><?= $this->language->index->presentation2->header ?></h2>
+                <h2 class="mt-3"><?= language()->index->presentation2->header ?></h2>
 
-                <p class="mt-3"><?= $this->language->index->presentation2->subheader ?></p>
+                <p class="mt-3"><?= language()->index->presentation2->subheader ?></p>
             </div>
         </div>
 
@@ -82,9 +82,9 @@
                   <i class="fa fa-link fa-stack-1x text-primary"></i>
                 </span>
 
-                <h2 class="mt-3"><?= $this->language->index->presentation3->header ?></h2>
+                <h2 class="mt-3"><?= language()->index->presentation3->header ?></h2>
 
-                <p class="mt-3"><?= $this->language->index->presentation3->subheader ?></p>
+                <p class="mt-3"><?= language()->index->presentation3->subheader ?></p>
             </div>
         </div>
     </div>
@@ -99,9 +99,9 @@
                   <i class="fa fa-chart-line fa-stack-1x text-primary"></i>
                 </span>
 
-                <h2 class="mt-3"><?= $this->language->index->presentation4->header ?></h2>
+                <h2 class="mt-3"><?= language()->index->presentation4->header ?></h2>
 
-                <p class="mt-3"><?= $this->language->index->presentation4->subheader ?></p>
+                <p class="mt-3"><?= language()->index->presentation4->subheader ?></p>
             </div>
         </div>
 
@@ -113,9 +113,9 @@
 
 <div class="container mt-10">
     <div class="text-center mb-8">
-        <h2><?= $this->language->index->pricing->header ?></h2>
+        <h2><?= language()->index->pricing->header ?></h2>
 
-        <p class="text-muted"><?= $this->language->index->pricing->subheader ?></p>
+        <p class="text-muted"><?= language()->index->pricing->subheader ?></p>
     </div>
 
     <?= $this->views['plans'] ?>

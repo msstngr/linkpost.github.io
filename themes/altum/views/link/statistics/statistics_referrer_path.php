@@ -2,8 +2,8 @@
 
 <div class="card my-3">
     <div class="card-body">
-        <h3 class="h5"><?= sprintf($data->referrer_host, $this->language->link->statistics->referrer_path) ?></h3>
-        <p class="text-muted mb-3"><?= $this->language->link->statistics->referrer_help ?></p>
+        <h3 class="h5"><?= sprintf($data->referrer_host, language()->link->statistics->referrer_path) ?></h3>
+        <p class="text-muted mb-3"><?= language()->link->statistics->referrer_help ?></p>
 
         <?php foreach($data->rows as $row): ?>
             <?php $percentage = round($row->total / $data->total_sum * 100, 1) ?>

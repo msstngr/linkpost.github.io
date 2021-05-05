@@ -1,13 +1,13 @@
 <?php defined('ALTUMCODE') || die() ?>
 
-<?php display_notifications() ?>
+<?= \Altum\Alerts::output_alerts() ?>
 
 <?php if($data->pages_categories_result->num_rows): ?>
     <div class="d-flex flex-column flex-md-row justify-content-between mb-4">
-        <h1 class="h3"><i class="fa fa-fw fa-xs fa-book text-primary-900 mr-2"></i> <?= $this->language->admin_pages_categories->header ?></h1>
+        <h1 class="h3"><i class="fa fa-fw fa-xs fa-book text-primary-900 mr-2"></i> <?= language()->admin_pages_categories->header ?></h1>
 
         <div class="col-auto p-0">
-            <a href="<?= url('admin/pages-category-create') ?>" class="btn btn-outline-primary"><i class="fa fa-fw fa-plus-circle"></i> <?= $this->language->admin_pages_categories->create ?></a>
+            <a href="<?= url('admin/pages-category-create') ?>" class="btn btn-outline-primary"><i class="fa fa-fw fa-plus-circle"></i> <?= language()->admin_pages_categories->create ?></a>
         </div>
     </div>
 
@@ -15,7 +15,7 @@
         <table class="table table-custom">
             <thead>
             <tr>
-                <th><?= $this->language->admin_pages_categories->pages_categories->pages_category ?></th>
+                <th><?= language()->admin_pages_categories->pages_categories->pages_category ?></th>
                 <th></th>
                 <th></th>
             </tr>
@@ -40,9 +40,9 @@
                         </div>
                     </td>
                     <td class="text-muted">
-                        <i class="fa fa-fw fa-sm fa-file-alt"></i> <?= sprintf($this->language->admin_pages_categories->pages_categories->total_pages, $row->total_pages) ?>
+                        <i class="fa fa-fw fa-sm fa-file-alt"></i> <?= sprintf(language()->admin_pages_categories->pages_categories->total_pages, $row->total_pages) ?>
                     </td>
-                    <td><?= include_view(THEME_PATH . 'views/admin/partials/admin_pages_category_dropdown_button.php', ['id' => $row->pages_category_id]) ?></td>
+                    <td><?= include_view(THEME_PATH . 'views/admin/pages/admin_pages_category_dropdown_button.php', ['id' => $row->pages_category_id]) ?></td>
                 </tr>
 
             <?php endwhile ?>
@@ -58,11 +58,11 @@
         </div>
 
         <div class="d-flex flex-column">
-            <h1 class="h3"><?= $this->language->admin_pages_categories->header_no_data ?></h1>
-            <p class="text-muted"><?= $this->language->admin_pages_categories->subheader_no_data ?></p>
+            <h1 class="h3"><?= language()->admin_pages_categories->header_no_data ?></h1>
+            <p class="text-muted"><?= language()->admin_pages_categories->subheader_no_data ?></p>
 
             <div>
-                <a href="<?= url('admin/pages-category-create') ?>" class="btn btn-primary"><i class="fa fa-fw fa-sm fa-plus-circle"></i> <?= $this->language->admin_pages_categories->create ?></a>
+                <a href="<?= url('admin/pages-category-create') ?>" class="btn btn-primary"><i class="fa fa-fw fa-sm fa-plus-circle"></i> <?= language()->admin_pages_categories->create ?></a>
             </div>
         </div>
     </div>
@@ -76,10 +76,10 @@
 <?php if($data->pages_result->num_rows): ?>
 
     <div class="d-flex flex-column flex-md-row justify-content-between mb-4">
-        <h1 class="h3"><i class="fa fa-fw fa-xs fa-file-alt text-primary-900 mr-2"></i> <?= $this->language->admin_pages->header ?></h1>
+        <h1 class="h3"><i class="fa fa-fw fa-xs fa-file-alt text-primary-900 mr-2"></i> <?= language()->admin_pages->header ?></h1>
 
         <div class="col-auto p-0">
-            <a href="<?= url('admin/page-create') ?>" class="btn btn-outline-primary"><i class="fa fa-fw fa-plus-circle"></i> <?= $this->language->admin_pages->create ?></a>
+            <a href="<?= url('admin/page-create') ?>" class="btn btn-outline-primary"><i class="fa fa-fw fa-plus-circle"></i> <?= language()->admin_pages->create ?></a>
         </div>
     </div>
 
@@ -87,8 +87,8 @@
         <table class="table table-custom">
             <thead>
             <tr>
-                <th><?= $this->language->admin_pages->pages->page ?></th>
-                <th><?= $this->language->admin_pages->pages->position ?></th>
+                <th><?= language()->admin_pages->pages->page ?></th>
+                <th><?= language()->admin_pages->pages->position ?></th>
                 <th></th>
                 <th></th>
             </tr>
@@ -106,18 +106,18 @@
                             <div class="d-flex flex-column">
                                 <div>
                                     <a href="<?= url('admin/page-update/' . $row->page_id) ?>"><?= $row->title ?></a>
-                                    <a href="<?= $row->type == 'internal' ? SITE_URL . 'pages/' . $row->url : $row->url ?>" target="_blank" rel="noreferrer"><i class="fa fa-fw fa-xs fa-external-link-alt ml-1"></i></a>
+                                    <a href="<?= $row->type == 'internal' ? SITE_URL . 'page/' . $row->url : $row->url ?>" target="_blank" rel="noreferrer"><i class="fa fa-fw fa-xs fa-external-link-alt ml-1"></i></a>
                                 </div>
                                 <span class="text-muted"><?= $row->url ?></span>
                             </div>
                         </div>
                     </td>
                     <td class="d-flex flex-column">
-                        <?= $this->language->admin_pages->pages->{'position_' . $row->position} ?>
-                        <small class="text-muted"><?= $this->language->admin_pages->input->{'type_' . strtolower($row->type)} ?></small>
+                        <?= language()->admin_pages->pages->{'position_' . $row->position} ?>
+                        <small class="text-muted"><?= language()->admin_pages->input->{'type_' . strtolower($row->type)} ?></small>
                     </td>
-                    <td class="text-muted"><?= sprintf($this->language->admin_pages->pages->total_views, nr($row->total_views)) ?></td>
-                    <td><?= include_view(THEME_PATH . 'views/admin/partials/admin_page_dropdown_button.php', ['id' => $row->page_id]) ?></td>
+                    <td class="text-muted"><?= sprintf(language()->admin_pages->pages->total_views, nr($row->total_views)) ?></td>
+                    <td><?= include_view(THEME_PATH . 'views/admin/pages/admin_page_dropdown_button.php', ['id' => $row->page_id]) ?></td>
                 </tr>
 
             <?php endwhile ?>
@@ -133,11 +133,11 @@
         </div>
 
         <div class="d-flex flex-column">
-            <h1 class="h3"><?= $this->language->admin_pages->header_no_data ?></h1>
-            <p class="text-muted"><?= $this->language->admin_pages->subheader_no_data ?></p>
+            <h1 class="h3"><?= language()->admin_pages->header_no_data ?></h1>
+            <p class="text-muted"><?= language()->admin_pages->subheader_no_data ?></p>
 
             <div>
-                <a href="<?= url('admin/page-create') ?>" class="btn btn-primary"><i class="fa fa-fw fa-sm fa-plus-circle"></i> <?= $this->language->admin_pages->create ?></a>
+                <a href="<?= url('admin/page-create') ?>" class="btn btn-primary"><i class="fa fa-fw fa-sm fa-plus-circle"></i> <?= language()->admin_pages->create ?></a>
             </div>
         </div>
     </div>

@@ -2,19 +2,12 @@
 
 namespace Altum\Controllers;
 
-use Altum\Database\Database;
+use Altum\Alerts;
 use Altum\Middlewares\Csrf;
-use Altum\Models\Plan;
-use Altum\Models\User;
-use Altum\Middlewares\Authentication;
-use Altum\Response;
-use Altum\Routing\Router;
 
 class AdminPagesCategories extends Controller {
 
     public function index() {
-
-        Authentication::guard('admin');
 
        redirect('pages');
 
@@ -22,21 +15,19 @@ class AdminPagesCategories extends Controller {
 
     public function delete() {
 
-        Authentication::guard();
-
-        $pages_category_id = (isset($this->params[0])) ? $this->params[0] : false;
+        $pages_category_id = isset($this->params[0]) ? (int) $this->params[0] : null;
 
         if(!Csrf::check('global_token')) {
-            $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
+            Alerts::add_error(language()->global->error_message->invalid_csrf_token);
         }
 
-        if(empty($_SESSION['error'])) {
+        if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
 
             /* Delete the page */
-            Database::$database->query("DELETE FROM `pages_categories` WHERE `pages_category_id` = {$pages_category_id}");
+            db()->where('pages_category_id', $pages_category_id)->delete('pages_categories');
 
-            /* Success message */
-            $_SESSION['success'][] = $this->language->admin_pages_category_delete_modal->success_message;
+            /* Set a nice success message */
+            Alerts::add_success(language()->admin_pages_category_delete_modal->success_message);
 
         }
 

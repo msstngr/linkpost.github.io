@@ -2,20 +2,18 @@
 
 namespace Altum\Controllers;
 
+use Altum\Alerts;
 use Altum\Database\Database;
 use Altum\Middlewares\Csrf;
-use Altum\Middlewares\Authentication;
 
 class AdminPagesCategoryUpdate extends Controller {
 
     public function index() {
 
-        Authentication::guard('admin');
-
-        $pages_category_id = (isset($this->params[0])) ? $this->params[0] : false;
+        $pages_category_id = isset($this->params[0]) ? (int) $this->params[0] : null;
 
         /* Check if user exists */
-        if(!$pages_category = Database::get('*', 'pages_categories', ['pages_category_id' => $pages_category_id])) {
+        if(!$pages_category = db()->where('pages_category_id', $pages_category_id)->getOne('pages_categories')) {
             redirect('admin/pages');
         }
 
@@ -27,30 +25,33 @@ class AdminPagesCategoryUpdate extends Controller {
             $_POST['icon'] = Database::clean_string($_POST['icon']);
             $_POST['order'] = (int) $_POST['order'] ?? 0;
 
-            $required_fields = ['url', 'title'];
-
-            /* Check for the required fields */
+            /* Check for any errors */
+            $required_fields = ['title', 'url'];
             foreach($required_fields as $field) {
                 if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]))) {
-                    $_SESSION['error'][] = $this->language->global->error_message->empty_fields;
-                    break 1;
+                    Alerts::add_field_error($field, language()->global->error_message->empty_field);
                 }
             }
 
             if(!Csrf::check()) {
-                $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
+                Alerts::add_error(language()->global->error_message->invalid_csrf_token);
             }
 
-            /* If there are no errors continue the process */
-            if(empty($_SESSION['error'])) {
-                /* Update the database */
-                $stmt = Database::$database->prepare("UPDATE `pages_categories` SET `url` = ?, `title` = ?, `description` = ?, `icon` = ?, `order` = ? WHERE `pages_category_id` = ?");
-                $stmt->bind_param('ssssss', $_POST['url'], $_POST['title'], $_POST['description'], $_POST['icon'], $_POST['order'], $pages_category->pages_category_id);
-                $stmt->execute();
-                $stmt->close();
+            /* If there are no errors, continue */
+            if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
+
+                /* Database query */
+                db()->where('pages_category_id', $pages_category_id)->update('pages_categories', [
+                    'url' => $_POST['url'],
+                    'title' => $_POST['title'],
+                    'description' => $_POST['description'],
+                    'icon' => $_POST['icon'],
+                    'order' => $_POST['order'],
+                ]);
 
                 /* Set a nice success message */
-                $_SESSION['success'][] = $this->language->global->success_message->basic;
+                Alerts::add_success(language()->global->success_message->basic);
+
                 redirect('admin/pages-category-update/' . $pages_category->pages_category_id);
 
             }

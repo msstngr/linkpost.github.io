@@ -7,15 +7,15 @@
         <div class="d-flex justify-content-between">
             <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
                 <li class="nav-item">
-                    <a class="nav-link <?= !isset($_GET['tab']) || (isset($_GET['tab']) && $_GET['tab'] == 'settings') ? 'active' : null ?>" id="settings-tab" data-toggle="pill" href="#settings" role="tab" aria-controls="settings" aria-selected="true"><?= $this->language->link->header->settings_tab ?></a>
+                    <a class="nav-link <?= !isset($_GET['tab']) || (isset($_GET['tab']) && $_GET['tab'] == 'settings') ? 'active' : null ?>" id="settings-tab" data-toggle="pill" href="#settings" role="tab" aria-controls="settings" aria-selected="true"><?= language()->link->header->settings_tab ?></a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= isset($_GET['tab']) && $_GET['tab'] == 'links'? 'active' : null ?>" id="links-tab" data-toggle="pill" href="#links" role="tab" aria-controls="links" aria-selected="false"><?= $this->language->link->header->links_tab ?></a>
+                    <a class="nav-link <?= isset($_GET['tab']) && $_GET['tab'] == 'links'? 'active' : null ?>" id="links-tab" data-toggle="pill" href="#links" role="tab" aria-controls="links" aria-selected="false"><?= language()->link->header->links_tab ?></a>
                 </li>
             </ul>
 
             <div>
-                <button type="button" data-toggle="modal" data-target="#biolink_link_create_modal" class="btn btn-primary rounded-pill"><i class="fa fa-fw fa-plus-circle"></i> <?= $this->language->links->create ?></button>
+                <button type="button" data-toggle="modal" data-target="#biolink_link_create_modal" class="btn btn-primary rounded-pill"><i class="fa fa-fw fa-plus-circle"></i> <?= language()->links->create ?></button>
             </div>
         </div>
 
@@ -33,12 +33,12 @@
                             <div class="notification-container"></div>
 
                             <div class="form-group">
-                                <label><i class="fa fa-fw fa-link fa-sm mr-1"></i> <?= $this->language->link->settings->url ?></label>
+                                <label><i class="fa fa-fw fa-link fa-sm mr-1"></i> <?= language()->link->settings->url ?></label>
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <?php if(count($data->domains)): ?>
                                             <select name="domain_id" class="appearance-none select-custom-altum form-control input-group-text">
-                                                <?php if($this->settings->links->main_domain_is_enabled || \Altum\Middlewares\Authentication::is_admin()): ?>
+                                                <?php if(settings()->links->main_domain_is_enabled || \Altum\Middlewares\Authentication::is_admin()): ?>
                                                     <option value="" <?= $data->link->domain ? 'selected="selected"' : null ?>><?= url() ?></option>
                                                 <?php endif ?>
 
@@ -54,19 +54,19 @@
                                         type="text"
                                         class="form-control"
                                         name="url"
-                                        placeholder="<?= $this->language->link->settings->url_placeholder ?>"
+                                        placeholder="<?= language()->link->settings->url_placeholder ?>"
                                         value="<?= $data->link->url ?>"
                                         <?= !$this->user->plan_settings->custom_url ? 'readonly="readonly"' : null ?>
-                                        <?= $this->user->plan_settings->custom_url ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>
+                                        <?= $this->user->plan_settings->custom_url ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>
                                     />
                                 </div>
-                                <small class="form-text text-muted"><?= $this->language->link->settings->url_help ?></small>
+                                <small class="form-text text-muted"><?= language()->link->settings->url_help ?></small>
                             </div>
 
                             <div class="form-group">
-                                <label for="settings_project_id"><i class="fa fa-fw fa-project-diagram fa-sm mr-1"></i> <?= $this->language->link->settings->project_id ?></label>
+                                <label for="settings_project_id"><i class="fa fa-fw fa-project-diagram fa-sm mr-1"></i> <?= language()->link->settings->project_id ?></label>
                                 <select id="settings_project_id" name="project_id" class="form-control">
-                                    <option value=""><?= $this->language->link->settings->project_id_null ?></option>
+                                    <option value=""><?= language()->link->settings->project_id_null ?></option>
                                     <?php foreach($data->projects as $row): ?>
                                         <option value="<?= $row->project_id ?>" <?= $data->link->project_id == $row->project_id ? 'selected="selected"' : null?>><?= $row->name ?></option>
                                     <?php endforeach ?>
@@ -86,29 +86,29 @@
 
                             <div class="form-group">
                                 <div class="m-1 d-flex flex-column align-items-center justify-content-center">
-                                    <label aria-label="<?= $this->language->link->settings->image ?>" class="clickable">
+                                    <label aria-label="<?= language()->link->settings->image ?>" class="clickable">
                                         <img id="image_file_preview" src="<?= $data->link->settings->image_url ?>" data-default-src="<?= $data->link->settings->image_url ?>" data-empty-src="<?= SITE_URL . ASSETS_URL_PATH . 'images/avatar_default.png' ?>" class="img-fluid link-image-preview" />
-                                        <input id="image_file_input" type="file" name="image" accept=".gif, .ico, .png, .jpg, .jpeg, .svg" class="form-control" style="display:none;" />
+                                        <input id="image_file_input" type="file" name="image" accept=".gif, .ico, .png, .jpg, .jpeg, .svg" class="form-control-file" style="display:none;" />
                                         <input type="hidden" name="image_delete" value="0" class="form-control" />
                                     </label>
 
                                     <div id="image_file_status" <?= empty($data->link->settings->image) ? 'style="display: none;"' : null ?>>
-                                        <button type="button" id="image_file_remove" class="btn btn-sm btn-outline-secondary" data-toggle="tooltip" title="<?= $this->language->link->settings->image_remove ?>"><i class="fa fa-fw fa-trash-alt"></i></button>
+                                        <button type="button" id="image_file_remove" class="btn btn-sm btn-outline-secondary" data-toggle="tooltip" title="<?= language()->link->settings->image_remove ?>"><i class="fa fa-fw fa-trash-alt"></i></button>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="form-group">
-                                <label for="settings_title"><i class="fa fa-fw fa-heading fa-sm mr-1"></i> <?= $this->language->link->settings->title ?></label>
-                                <input type="text" id="settings_title" name="title" class="form-control" value="<?= $data->link->settings->title ?>" required="required" />
+                                <label for="settings_title"><i class="fa fa-fw fa-heading fa-sm mr-1"></i> <?= language()->link->settings->title ?></label>
+                                <input type="text" id="settings_title" name="title" class="form-control" value="<?= $data->link->settings->title ?>" />
                             </div>
 
                             <div class="form-group">
-                                <label for="settings_description"><i class="fa fa-fw fa-pen-fancy fa-sm mr-1"></i> <?= $this->language->link->settings->description ?></label>
+                                <label for="settings_description"><i class="fa fa-fw fa-pen-fancy fa-sm mr-1"></i> <?= language()->link->settings->description ?></label>
                                 <input type="text" id="settings_description" name="description" class="form-control" value="<?= $data->link->settings->description ?>" />
                             </div>
 
-                            <div <?= $this->user->plan_settings->verified ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>>
+                            <div <?= $this->user->plan_settings->verified ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>>
                                 <div class="<?= $this->user->plan_settings->verified ? null : 'container-disabled' ?>">
                                     <div class="custom-control custom-switch mr-3 mb-3">
                                         <input
@@ -119,22 +119,22 @@
                                             <?= !$this->user->plan_settings->verified ? 'disabled="disabled"': null ?>
                                             <?= $data->link->settings->display_verified ? 'checked="checked"' : null ?>
                                         >
-                                        <label class="custom-control-label clickable" for="display_verified"><?= $this->language->link->settings->display_verified ?></label>
+                                        <label class="custom-control-label clickable" for="display_verified"><?= language()->link->settings->display_verified ?></label>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="form-group">
-                                <label for="settings_text_color"><i class="fa fa-fw fa-paint-brush fa-sm mr-1"></i> <?= $this->language->link->settings->text_color ?></label>
+                                <label for="settings_text_color"><i class="fa fa-fw fa-paint-brush fa-sm mr-1"></i> <?= language()->link->settings->text_color ?></label>
                                 <input type="hidden" id="settings_text_color" name="text_color" class="form-control" value="<?= $data->link->settings->text_color ?>" required="required" />
                                 <div id="settings_text_color_pickr"></div>
                             </div>
 
                             <div class="form-group">
-                                <label for="settings_background_type"><i class="fa fa-fw fa-fill fa-sm mr-1"></i> <?= $this->language->link->settings->background_type ?></label>
+                                <label for="settings_background_type"><i class="fa fa-fw fa-fill fa-sm mr-1"></i> <?= language()->link->settings->background_type ?></label>
                                 <select id="settings_background_type" name="background_type" class="form-control">
                                     <?php foreach($biolink_backgrounds as $key => $value): ?>
-                                        <option value="<?= $key ?>" <?= $data->link->settings->background_type == $key ? 'selected="selected"' : null?>><?= $this->language->link->settings->{'background_type_' . $key} ?></option>
+                                        <option value="<?= $key ?>" <?= $data->link->settings->background_type == $key ? 'selected="selected"' : null?>><?= language()->link->settings->{'background_type_' . $key} ?></option>
                                     <?php endforeach ?>
                                 </select>
                             </div>
@@ -149,17 +149,17 @@
                                 <?php endforeach ?>
                             </div>
 
-                            <div <?= $this->user->plan_settings->custom_backgrounds ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>>
+                            <div <?= $this->user->plan_settings->custom_backgrounds ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>>
                                 <div class="<?= $this->user->plan_settings->custom_backgrounds ? null : 'container-disabled' ?>">
                                     <div id="background_type_gradient">
                                         <div class="form-group">
-                                            <label for="settings_background_type_gradient_color_one"><?= $this->language->link->settings->background_type_gradient_color_one ?></label>
+                                            <label for="settings_background_type_gradient_color_one"><?= language()->link->settings->background_type_gradient_color_one ?></label>
                                             <input type="hidden" id="settings_background_type_gradient_color_one" name="background[]" class="form-control" value="<?= $data->link->settings->background->color_one ?? '' ?>" />
                                             <div id="settings_background_type_gradient_color_one_pickr"></div>
                                         </div>
 
                                         <div class="form-group">
-                                            <label for="settings_background_type_gradient_color_two"><?= $this->language->link->settings->background_type_gradient_color_two ?></label>
+                                            <label for="settings_background_type_gradient_color_two"><?= language()->link->settings->background_type_gradient_color_two ?></label>
                                             <input type="hidden" id="settings_background_type_gradient_color_two" name="background[]" class="form-control" value="<?= $data->link->settings->background->color_two ?? '' ?>" />
                                             <div id="settings_background_type_gradient_color_two_pickr"></div>
                                         </div>
@@ -167,7 +167,7 @@
 
                                     <div id="background_type_color">
                                         <div class="form-group">
-                                            <label for="settings_background_type_color"><?= $this->language->link->settings->background_type_color ?></label>
+                                            <label for="settings_background_type_color"><?= language()->link->settings->background_type_color ?></label>
                                             <input type="hidden" id="settings_background_type_color" name="background" class="form-control" value="<?= is_string($data->link->settings->background) ? $data->link->settings->background : '' ?>" />
                                             <div id="settings_background_type_color_pickr"></div>
                                         </div>
@@ -175,36 +175,36 @@
 
                                     <div id="background_type_image">
                                         <div class="form-group">
-                                            <label><?= $this->language->link->settings->background_type_image ?></label>
+                                            <label><?= language()->link->settings->background_type_image ?></label>
                                             <?php if(is_string($data->link->settings->background) && file_exists(UPLOADS_PATH . 'backgrounds/' . $data->link->settings->background)): ?>
                                                 <img id="background_type_image_preview" src="<?= SITE_URL . UPLOADS_URL_PATH . 'backgrounds/' . $data->link->settings->background ?>" data-default-src="<?= SITE_URL . UPLOADS_URL_PATH . 'backgrounds/' . $data->link->settings->background ?>" class="link-background-type-image img-fluid" />
                                             <?php endif ?>
-                                            <input id="background_type_image_input" type="file" name="background" accept=".gif, .ico, .png, .jpg, .jpeg, .svg" class="form-control" />
+                                            <input id="background_type_image_input" type="file" name="background" accept=".gif, .ico, .png, .jpg, .jpeg, .svg" class="form-control-file" />
                                             <p id="background_type_image_status" style="display: none;">
-                                                <span class="text-muted"><?= $this->language->link->settings->image_status ?></span>
-                                                <span id="background_type_image_remove" class="clickable" data-toggle="tooltip" title="<?= $this->language->link->settings->image_remove ?>"><i class="fa fa-fw fa-trash-alt"></i></span>
+                                                <span class="text-muted"><?= language()->link->settings->image_status ?></span>
+                                                <span id="background_type_image_remove" class="clickable" data-toggle="tooltip" title="<?= language()->link->settings->image_remove ?>"><i class="fa fa-fw fa-trash-alt"></i></span>
                                             </p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div <?= $this->user->plan_settings->leap_link ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>>
+                            <div <?= $this->user->plan_settings->leap_link ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>>
                                 <div class="<?= $this->user->plan_settings->leap_link ? null : 'container-disabled' ?>">
                                     <div class="form-group">
-                                        <label for="leap_link"><i class="fa fa-fw fa-forward fa-sm mr-1"></i> <?= $this->language->link->settings->leap_link ?></label>
-                                        <input id="leap_link" type="text" class="form-control" name="leap_link" value="<?= $data->link->settings->leap_link ?>" <?= !$this->user->plan_settings->leap_link ? 'disabled="disabled"': null ?> autocomplete="off" />
-                                        <small class="form-text text-muted"><?= $this->language->link->settings->leap_link_help ?></small>
+                                        <label for="leap_link"><i class="fa fa-fw fa-forward fa-sm mr-1"></i> <?= language()->link->settings->leap_link ?></label>
+                                        <input id="leap_link" type="url" class="form-control" name="leap_link" value="<?= $data->link->settings->leap_link ?>" <?= !$this->user->plan_settings->leap_link ? 'disabled="disabled"': null ?> autocomplete="off" />
+                                        <small class="form-text text-muted"><?= language()->link->settings->leap_link_help ?></small>
                                     </div>
                                 </div>
                             </div>
 
                             <button class="btn btn-block btn-gray-300 my-4" type="button" data-toggle="collapse" data-target="#branding_container" aria-expanded="false" aria-controls="branding_container">
-                                <?= $this->language->link->settings->branding_header ?>
+                                <?= language()->link->settings->branding_header ?>
                             </button>
 
                             <div class="collapse" id="branding_container">
-                                <div <?= $this->user->plan_settings->removable_branding ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>>
+                                <div <?= $this->user->plan_settings->removable_branding ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>>
                                     <div class="<?= $this->user->plan_settings->removable_branding ? null : 'container-disabled' ?>">
                                         <div class="custom-control custom-switch mr-3 mb-3">
                                             <input
@@ -215,21 +215,21 @@
                                                 <?= !$this->user->plan_settings->removable_branding ? 'disabled="disabled"': null ?>
                                                 <?= $data->link->settings->display_branding ? 'checked="checked"' : null ?>
                                             >
-                                            <label class="custom-control-label clickable" for="display_branding"><?= $this->language->link->settings->display_branding ?></label>
+                                            <label class="custom-control-label clickable" for="display_branding"><?= language()->link->settings->display_branding ?></label>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div <?= $this->user->plan_settings->custom_branding ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>>
+                                <div <?= $this->user->plan_settings->custom_branding ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>>
                                     <div class="<?= $this->user->plan_settings->custom_branding ? null : 'container-disabled' ?>">
                                         <div class="form-group">
-                                            <label><i class="fa fa-fw fa-random fa-sm mr-1"></i> <?= $this->language->link->settings->branding->name ?></label>
+                                            <label><i class="fa fa-fw fa-random fa-sm mr-1"></i> <?= language()->link->settings->branding->name ?></label>
                                             <input id="branding_name" type="text" class="form-control" name="branding_name" value="<?= $data->link->settings->branding->name ?? '' ?>" />
-                                            <small class="form-text text-muted"><?= $this->language->link->settings->branding->name_help ?></small>
+                                            <small class="form-text text-muted"><?= language()->link->settings->branding->name_help ?></small>
                                         </div>
 
                                         <div class="form-group">
-                                            <label><i class="fa fa-fw fa-link fa-sm mr-1"></i> <?= $this->language->link->settings->branding->url ?></label>
+                                            <label><i class="fa fa-fw fa-link fa-sm mr-1"></i> <?= language()->link->settings->branding->url ?></label>
                                             <input id="branding_url" type="text" class="form-control" name="branding_url" value="<?= $data->link->settings->branding->url ?? '' ?>" />
                                         </div>
                                     </div>
@@ -237,81 +237,94 @@
                             </div>
 
                             <button class="btn btn-block btn-gray-300 my-4" type="button" data-toggle="collapse" data-target="#analytics_container" aria-expanded="false" aria-controls="analytics_container">
-                                <?= $this->language->link->settings->analytics_header ?>
+                                <?= language()->link->settings->analytics_header ?>
                             </button>
 
                             <div class="collapse" id="analytics_container">
-                                <div <?= $this->user->plan_settings->google_analytics ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>>
+                                <div <?= $this->user->plan_settings->google_analytics ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>>
                                     <div class="<?= $this->user->plan_settings->google_analytics ? null : 'container-disabled' ?>">
                                         <div class="form-group">
-                                            <label><i class="fab fa-fw fa-google fa-sm mr-1"></i> <?= $this->language->link->settings->google_analytics ?></label>
+                                            <label><i class="fab fa-fw fa-google fa-sm mr-1"></i> <?= language()->link->settings->google_analytics ?></label>
                                             <input id="google_analytics" type="text" class="form-control" name="google_analytics" value="<?= $data->link->settings->google_analytics ?? '' ?>" />
-                                            <small class="form-text text-muted"><?= $this->language->link->settings->google_analytics_help ?></small>
+                                            <small class="form-text text-muted"><?= language()->link->settings->google_analytics_help ?></small>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div <?= $this->user->plan_settings->facebook_pixel ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>>
+                                <div <?= $this->user->plan_settings->facebook_pixel ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>>
                                     <div class="<?= $this->user->plan_settings->facebook_pixel ? null : 'container-disabled' ?>">
                                         <div class="form-group">
-                                            <label><i class="fab fa-fw fa-facebook fa-sm mr-1"></i> <?= $this->language->link->settings->facebook_pixel ?></label>
+                                            <label><i class="fab fa-fw fa-facebook fa-sm mr-1"></i> <?= language()->link->settings->facebook_pixel ?></label>
                                             <input id="facebook_pixel" type="text" class="form-control" name="facebook_pixel" value="<?= $data->link->settings->facebook_pixel ?? '' ?>" />
-                                            <small class="form-text text-muted"><?= $this->language->link->settings->facebook_pixel_help ?></small>
+                                            <small class="form-text text-muted"><?= language()->link->settings->facebook_pixel_help ?></small>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <button class="btn btn-block btn-gray-300 my-4" type="button" data-toggle="collapse" data-target="#seo_container" aria-expanded="false" aria-controls="seo_container">
-                                <?= $this->language->link->settings->seo_header ?>
+                                <?= language()->link->settings->seo_header ?>
                             </button>
 
                             <div class="collapse" id="seo_container">
-                                <div <?= $this->user->plan_settings->seo ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>>
+                                <div <?= $this->user->plan_settings->seo ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>>
                                     <div class="<?= $this->user->plan_settings->seo ? null : 'container-disabled' ?>">
                                         <div class="custom-control custom-switch mb-3">
                                             <input id="seo_block" name="seo_block" type="checkbox" class="custom-control-input" <?= $data->link->settings->seo->block ? 'checked="checked"' : null ?>>
-                                            <label class="custom-control-label" for="seo_block"><?= $this->language->link->settings->seo_block ?></label>
-                                            <small class="form-text text-muted"><?= $this->language->link->settings->seo_block_help ?></small>
+                                            <label class="custom-control-label" for="seo_block"><?= language()->link->settings->seo_block ?></label>
+                                            <small class="form-text text-muted"><?= language()->link->settings->seo_block_help ?></small>
                                         </div>
 
                                         <div class="form-group">
-                                            <label><i class="fa fa-fw fa-heading fa-sm mr-1"></i> <?= $this->language->link->settings->seo_title ?></label>
+                                            <label><i class="fa fa-fw fa-heading fa-sm mr-1"></i> <?= language()->link->settings->seo_title ?></label>
                                             <input id="seo_title" type="text" class="form-control" name="seo_title" value="<?= $data->link->settings->seo->title ?? '' ?>" />
-                                            <small class="form-text text-muted"><?= $this->language->link->settings->seo_title_help ?></small>
+                                            <small class="form-text text-muted"><?= language()->link->settings->seo_title_help ?></small>
                                         </div>
 
                                         <div class="form-group">
-                                            <label><i class="fa fa-fw fa-paragraph fa-sm mr-1"></i> <?= $this->language->link->settings->seo_meta_description ?></label>
+                                            <label><i class="fa fa-fw fa-paragraph fa-sm mr-1"></i> <?= language()->link->settings->seo_meta_description ?></label>
                                             <input id="seo_meta_description" type="text" class="form-control" name="seo_meta_description" value="<?= $data->link->settings->seo->meta_description ?? '' ?>" />
-                                            <small class="form-text text-muted"><?= $this->language->link->settings->seo_meta_description_help ?></small>
+                                            <small class="form-text text-muted"><?= language()->link->settings->seo_meta_description_help ?></small>
                                         </div>
 
                                         <div class="form-group">
-                                            <label><i class="fa fa-fw fa-image fa-sm mr-1"></i> <?= $this->language->link->settings->seo_image ?></label>
-                                            <input id="seo_image" type="text" class="form-control" name="seo_image" value="<?= $data->link->settings->seo->image ?? '' ?>" />
-                                            <small class="form-text text-muted"><?= $this->language->link->settings->seo_image_help ?></small>
+                                            <label><i class="fa fa-fw fa-image fa-sm mr-1"></i> <?= language()->link->settings->seo_image ?></label>
+                                            <div data-seo-image-container class="<?= !empty($data->link->settings->seo->image) ? null : 'd-none' ?>">
+                                                <div class="row">
+                                                    <div class="m-1 col-6 col-xl-3">
+                                                        <img src="<?= $data->link->settings->seo->image ? SITE_URL . UPLOADS_URL_PATH . 'block_images/' . $data->link->settings->seo->image : null ?>" class="img-fluid rounded <?= !empty($data->link->settings->seo->image) ? null : 'd-none' ?>" loading="lazy" />
+                                                    </div>
+                                                </div>
+                                                <div class="custom-control custom-checkbox my-2">
+                                                    <input id="seo_image_remove" name="seo_image_remove" type="checkbox" class="custom-control-input" onchange="this.checked ? document.querySelector('#seo_image').classList.add('d-none') : document.querySelector('#seo_image').classList.remove('d-none')">
+                                                    <label class="custom-control-label" for="seo_image_remove">
+                                                        <span class="text-muted"><?= language()->global->delete_file ?></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <input id="seo_image" type="file" name="seo_image" accept=".gif, .png, .jpg, .jpeg" class="form-control-file" />
+                                            <small class="form-text text-muted"><?= language()->link->settings->seo_image_help ?></small>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             <button class="btn btn-block btn-gray-300 my-4" type="button" data-toggle="collapse" data-target="#utm_container" aria-expanded="false" aria-controls="utm_container">
-                                <?= $this->language->link->settings->utm_header ?>
+                                <?= language()->link->settings->utm_header ?>
                             </button>
 
                             <div class="collapse" id="utm_container">
-                                <div <?= $this->user->plan_settings->utm ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>>
+                                <div <?= $this->user->plan_settings->utm ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>>
                                     <div class="<?= $this->user->plan_settings->utm ? null : 'container-disabled' ?>">
-                                        <small class="form-text text-muted"><?= $this->language->link->settings->utm_campaign ?></small>
+                                        <small class="form-text text-muted"><?= language()->link->settings->utm_campaign ?></small>
 
                                         <div class="form-group">
-                                            <label><?= $this->language->link->settings->utm_medium ?></label>
+                                            <label><?= language()->link->settings->utm_medium ?></label>
                                             <input id="utm_medium" type="text" class="form-control" name="utm_medium" value="<?= $data->link->settings->utm->medium ?? '' ?>" />
                                         </div>
 
                                         <div class="form-group">
-                                            <label><?= $this->language->link->settings->utm_source ?></label>
+                                            <label><?= language()->link->settings->utm_source ?></label>
                                             <input id="utm_source" type="text" class="form-control" name="utm_source" value="<?= $data->link->settings->utm->source ?? '' ?>" />
                                         </div>
                                     </div>
@@ -319,14 +332,14 @@
                             </div>
 
                             <button class="btn btn-block btn-gray-300 my-4" type="button" data-toggle="collapse" data-target="#socials_container" aria-expanded="false" aria-controls="socials_container">
-                                <?= $this->language->link->settings->socials_header ?>
+                                <?= language()->link->settings->socials_header ?>
                             </button>
 
                             <div class="collapse" id="socials_container">
-                                <div <?= $this->user->plan_settings->socials ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>>
+                                <div <?= $this->user->plan_settings->socials ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>>
                                     <div class="<?= $this->user->plan_settings->socials ? null : 'container-disabled' ?>">
                                         <div class="form-group">
-                                            <label for="settings_socials_color"><i class="fa fa-fw fa-paint-brush fa-sm mr-1"></i> <?= $this->language->link->settings->socials_color ?></label>
+                                            <label for="settings_socials_color"><i class="fa fa-fw fa-paint-brush fa-sm mr-1"></i> <?= language()->link->settings->socials_color ?></label>
                                             <input type="hidden" id="settings_socials_color" name="socials_color" class="form-control" value="<?= $data->link->settings->socials_color ?>" required="required" />
                                             <div id="settings_socials_color_pickr"></div>
                                         </div>
@@ -337,19 +350,19 @@
 
                                             <?php if($value['input_group']): ?>
                                                 <div class="form-group">
-                                                    <label><i class="<?= $this->language->link->settings->socials->{$key}->icon ?> fa-fw fa-sm mr-1"></i> <?= $this->language->link->settings->socials->{$key}->name ?></label>
+                                                    <label><i class="<?= language()->link->settings->socials->{$key}->icon ?> fa-fw fa-sm mr-1"></i> <?= language()->link->settings->socials->{$key}->name ?></label>
 
                                                     <div class="input-group mb-3">
                                                         <div class="input-group-prepend">
                                                             <span class="input-group-text"><?= str_replace('%s', '', $value['format']) ?></span>
                                                         </div>
-                                                        <input type="text" class="form-control" name="socials[<?= $key ?>]" placeholder="<?= $this->language->link->settings->socials->{$key}->placeholder ?>" value="<?= $data->link->settings->socials->{$key} ?? '' ?>" />
+                                                        <input type="text" class="form-control" name="socials[<?= $key ?>]" placeholder="<?= language()->link->settings->socials->{$key}->placeholder ?>" value="<?= $data->link->settings->socials->{$key} ?? '' ?>" />
                                                     </div>
                                                 </div>
                                             <?php else: ?>
                                                 <div class="form-group">
-                                                    <label><i class="<?= $this->language->link->settings->socials->{$key}->icon ?> fa-fw fa-sm mr-1"></i> <?= $this->language->link->settings->socials->{$key}->name ?></label>
-                                                    <input type="text" class="form-control" name="socials[<?= $key ?>]" placeholder="<?= $this->language->link->settings->socials->{$key}->placeholder ?>" value="<?= $data->link->settings->socials->{$key} ?? '' ?>" />
+                                                    <label><i class="<?= language()->link->settings->socials->{$key}->icon ?> fa-fw fa-sm mr-1"></i> <?= language()->link->settings->socials->{$key}->name ?></label>
+                                                    <input type="text" class="form-control" name="socials[<?= $key ?>]" placeholder="<?= language()->link->settings->socials->{$key}->placeholder ?>" value="<?= $data->link->settings->socials->{$key} ?? '' ?>" />
                                                 </div>
                                             <?php endif ?>
 
@@ -360,16 +373,16 @@
                             </div>
 
                             <button class="btn btn-block btn-gray-300 my-4" type="button" data-toggle="collapse" data-target="#fonts_container" aria-expanded="false" aria-controls="fonts_container">
-                                <?= $this->language->link->settings->fonts_header ?>
+                                <?= language()->link->settings->fonts_header ?>
                             </button>
 
                             <div class="collapse" id="fonts_container">
-                                <div <?= $this->user->plan_settings->fonts ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>>
+                                <div <?= $this->user->plan_settings->fonts ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>>
                                     <div class="<?= $this->user->plan_settings->fonts ? null : 'container-disabled' ?>">
                                         <?php $biolink_fonts = require APP_PATH . 'includes/biolink_fonts.php'; ?>
 
                                         <div class="form-group">
-                                            <label for="settings_font"><i class="fa fa-fw fa-pen-nib fa-sm mr-1"></i> <?= $this->language->link->settings->font ?></label>
+                                            <label for="settings_font"><i class="fa fa-fw fa-pen-nib fa-sm mr-1"></i> <?= language()->link->settings->font ?></label>
                                             <select id="settings_font" name="font" class="form-control">
                                                 <?php foreach($biolink_fonts as $key => $value): ?>
                                                     <option value="<?= $key ?>" <?= $data->link->settings->font == $key ? 'selected="selected"' : null?>><?= $value['name'] ?></option>
@@ -381,22 +394,22 @@
                             </div>
 
                             <button class="btn btn-block btn-gray-300 my-4" type="button" data-toggle="collapse" data-target="#protection_container" aria-expanded="false" aria-controls="protection_container">
-                                <?= $this->language->link->settings->protection_header ?>
+                                <?= language()->link->settings->protection_header ?>
                             </button>
 
                             <div class="collapse" id="protection_container">
 
-                                <div <?= $this->user->plan_settings->password ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>>
+                                <div <?= $this->user->plan_settings->password ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>>
                                     <div class="<?= $this->user->plan_settings->password ? null : 'container-disabled' ?>">
                                         <div class="form-group">
-                                            <label for="password"><i class="fa fa-fw fa-key fa-sm mr-1"></i> <?= $this->language->link->settings->password ?></label>
-                                            <input id="password" type="password" class="form-control" name="qweasdzxc" value="<?= $data->link->settings->password ?>" autocomplete="off" <?= !$this->user->plan_settings->password ? 'disabled="disabled"': null ?> />
-                                            <small class="form-text text-muted"><?= $this->language->link->settings->password_help ?></small>
+                                            <label for="qweasdzxc"><i class="fa fa-fw fa-key fa-sm mr-1"></i> <?= language()->link->settings->password ?></label>
+                                            <input id="qweasdzxc" type="password" class="form-control" name="qweasdzxc" value="<?= $data->link->settings->password ?>" autocomplete="new-password" <?= !$this->user->plan_settings->password ? 'disabled="disabled"': null ?> />
+                                            <small class="form-text text-muted"><?= language()->link->settings->password_help ?></small>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div <?= $this->user->plan_settings->sensitive_content ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>>
+                                <div <?= $this->user->plan_settings->sensitive_content ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>>
                                     <div class="<?= $this->user->plan_settings->sensitive_content ? null : 'container-disabled' ?>">
                                     <div class="custom-control custom-switch mr-3 mb-3">
                                         <input
@@ -407,15 +420,15 @@
                                             <?= !$this->user->plan_settings->sensitive_content ? 'disabled="disabled"': null ?>
                                             <?= $data->link->settings->sensitive_content ? 'checked="checked"' : null ?>
                                         >
-                                        <label class="custom-control-label clickable" for="sensitive_content"><?= $this->language->link->settings->sensitive_content ?></label>
-                                        <small class="form-text text-muted"><?= $this->language->link->settings->sensitive_content_help ?></small>
+                                        <label class="custom-control-label clickable" for="sensitive_content"><?= language()->link->settings->sensitive_content ?></label>
+                                        <small class="form-text text-muted"><?= language()->link->settings->sensitive_content_help ?></small>
                                     </div>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="text-center mt-4">
-                                <button type="submit" name="submit" class="btn btn-block btn-primary"><?= $this->language->global->update ?></button>
+                                <button type="submit" name="submit" class="btn btn-block btn-primary"><?= language()->global->update ?></button>
                             </div>
                         </form>
 
@@ -434,15 +447,15 @@
                             <div class="card-body">
                                 <div class="d-flex align-items-center">
                                     <div class="custom-row-side-controller">
-                                        <span data-toggle="tooltip" title="<?= $this->language->link->links->link_sort ?>">
+                                        <span data-toggle="tooltip" title="<?= language()->link->links->link_sort ?>">
                                             <i class="fa fa-fw fa-bars text-muted custom-row-side-controller-grab drag"></i>
                                         </span>
                                     </div>
 
                                     <div class="col-1 mr-2 p-0 d-none d-lg-block">
-                                        <span class="fa-stack fa-1x" data-toggle="tooltip" title="<?= $this->language->link->biolink->{$row->subtype}->name ?>">
-                                            <i class="fa fa-circle fa-stack-2x" style="color: <?= $this->language->link->biolink->{$row->subtype}->color ?>"></i>
-                                            <i class="fas <?= $this->language->link->biolink->{$row->subtype}->icon ?> fa-stack-1x fa-inverse"></i>
+                                        <span class="fa-stack fa-1x" data-toggle="tooltip" title="<?= language()->link->biolink->{$row->subtype}->name ?>">
+                                            <i class="fa fa-circle fa-stack-2x" style="color: <?= language()->link->biolink->{$row->subtype}->color ?>"></i>
+                                            <i class="fas <?= language()->link->biolink->{$row->subtype}->icon ?> fa-stack-1x fa-inverse"></i>
                                         </span>
                                     </div>
 
@@ -454,7 +467,7 @@
                                                aria-expanded="false"
                                                aria-controls="link_expanded_content<?= $row->link_id ?>"
                                             >
-                                                <strong><?= in_array($row->subtype, ['image', 'image_grid', 'spotify', 'youtube', 'vimeo', 'tiktok', 'twitch', 'applemusic', 'soundcloud', 'text', 'mail', 'tidal', 'anchor', 'twitter_tweet', 'instagram_media', 'rss_feed', 'custom_html', 'vcard', 'divider']) ? $this->language->link->biolink->{$row->subtype}->name : $row->settings->name ?></strong>
+                                                <strong><?= in_array($row->subtype, ['image', 'image_grid', 'spotify', 'youtube', 'vimeo', 'tiktok', 'twitch', 'applemusic', 'soundcloud', 'text', 'mail', 'tidal', 'anchor', 'twitter_tweet', 'instagram_media', 'rss_feed', 'custom_html', 'vcard', 'divider']) ? language()->link->biolink->{$row->subtype}->name : $row->settings->name ?></strong>
                                             </a>
 
                                             <span class="d-flex align-items-center">
@@ -477,13 +490,13 @@
                                     <div class="col-2">
                                         <?php if(!in_array($row->subtype, ['mail', 'text', 'youtube', 'vimeo', 'tiktok', 'twitch', 'spotify', 'soundcloud', 'applemusic', 'tidal', 'anchor', 'twitter_tweet', 'instagram_media', 'rss_feed', 'custom_html', 'vcard', 'divider'])): ?>
                                             <a href="<?= url('link/' . $row->link_id . '/statistics') ?>">
-                                                <span data-toggle="tooltip" title="<?= $this->language->links->clicks ?>" class="badge badge-light"><i class="fa fa-fw fa-sm fa-chart-bar mr-1"></i> <?= nr($row->clicks) ?></span>
+                                                <span data-toggle="tooltip" title="<?= language()->links->clicks ?>" class="badge badge-light"><i class="fa fa-fw fa-sm fa-chart-bar mr-1"></i> <?= nr($row->clicks) ?></span>
                                             </a>
                                         <?php endif ?>
                                     </div>
 
                                     <div class="col-2 col-md-auto">
-                                        <div class="custom-control custom-switch" data-toggle="tooltip" title="<?= $this->language->link->links->is_enabled_tooltip ?>">
+                                        <div class="custom-control custom-switch" data-toggle="tooltip" title="<?= language()->link->links->is_enabled_tooltip ?>">
                                             <input
                                                     type="checkbox"
                                                     class="custom-control-input"
@@ -508,18 +521,18 @@
                                                        aria-expanded="false"
                                                        aria-controls="link_expanded_content<?= $row->link_id ?>"
                                                     >
-                                                        <i class="fa fa-fw fa-pencil-alt"></i> <?= $this->language->global->edit ?>
+                                                        <i class="fa fa-fw fa-pencil-alt"></i> <?= language()->global->edit ?>
                                                     </a>
 
                                                     <?php if(!in_array($row->subtype, ['mail', 'text', 'youtube', 'vimeo', 'tiktok', 'twitch', 'spotify', 'soundcloud', 'applemusic', 'tidal', 'anchor', 'twitter_tweet', 'instagram_media', 'rss_feed', 'custom_html', 'vcard', 'divider'])): ?>
-                                                        <a href="<?= url('link/' . $row->link_id . '/statistics') ?>" class="dropdown-item"><i class="fa fa-fw fa-chart-bar"></i> <?= $this->language->link->statistics->link ?></a>
+                                                        <a href="<?= url('link/' . $row->link_id . '/statistics') ?>" class="dropdown-item"><i class="fa fa-fw fa-chart-bar"></i> <?= language()->link->statistics->link ?></a>
                                                     <?php endif ?>
 
                                                     <?php if($row->subtype == 'link'): ?>
-                                                        <a href="#" class="dropdown-item" data-duplicate="true" data-row-id="<?= $row->link_id ?>"><i class="fa fa-fw fa-copy"></i> <?= $this->language->link->links->duplicate ?></a>
+                                                        <a href="#" class="dropdown-item" data-duplicate="true" data-row-id="<?= $row->link_id ?>"><i class="fa fa-fw fa-copy"></i> <?= language()->link->links->duplicate ?></a>
                                                     <?php endif ?>
 
-                                                    <a href="#" class="dropdown-item" data-delete="<?= $this->language->global->info_message->confirm_delete ?>" data-row-id="<?= $row->link_id ?>"><i class="fa fa-fw fa-times"></i> <?= $this->language->global->delete ?></a>
+                                                    <a href="#" class="dropdown-item" data-delete="<?= language()->global->info_message->confirm_delete ?>" data-row-id="<?= $row->link_id ?>"><i class="fa fa-fw fa-times"></i> <?= language()->global->delete ?></a>
                                                 </div>
                                             </a>
                                         </div>
@@ -536,8 +549,8 @@
                 <?php else: ?>
 
                     <div class="d-flex flex-column align-items-center justify-content-center mt-5">
-                        <img src="<?= SITE_URL . ASSETS_URL_PATH . 'images/no_rows.svg' ?>" class="col-10 col-md-8 col-lg-6 mb-4" alt="<?= $this->language->link->links->no_data ?>" />
-                        <h2 class="h4 text-muted"><?= $this->language->link->links->no_data ?></h2>
+                        <img src="<?= SITE_URL . ASSETS_URL_PATH . 'images/no_rows.svg' ?>" class="col-10 col-md-8 col-lg-6 mb-4" alt="<?= language()->link->links->no_data ?>" />
+                        <h2 class="h4 text-muted"><?= language()->link->links->no_data ?></h2>
                     </div>
 
                 <?php endif ?>
@@ -550,7 +563,7 @@
         <div class="biolink-preview-container">
             <div class="biolink-preview">
                 <div class="biolink-preview-iframe-container">
-                    <iframe id="biolink_preview_iframe" class="biolink-preview-iframe" src="<?= url($data->link->url . '?preview&link_id=' . $data->link->link_id) ?>" data-url-prepend="<?= url() ?>" data-url-append="<?= '?preview&link_id=' . $data->link->link_id ?>"></iframe>
+                    <iframe id="biolink_preview_iframe" class="biolink-preview-iframe" src="<?= url('l/link/' . $data->link->link_id . '?preview=' . md5($data->link->user_id)) ?>" data-url-prepend="<?= url() ?>" data-url-append="<?= '?preview=' . md5($data->link->user_id) ?>"></iframe>
                 </div>
             </div>
         </div>
@@ -831,9 +844,43 @@
                 notification_container[0].scrollIntoView();
 
                 /* Update image previews for some link types */
-                if(event.currentTarget.getAttribute('name') == 'update_biolink_' && data.details?.image_url) {
-                    event.currentTarget.querySelector('img').setAttribute('src', data.details.image_url);
-                    event.currentTarget.querySelector('img').classList.remove('d-none');
+                if(event.currentTarget.getAttribute('name') == 'update_biolink_' && data.details?.image_prop) {
+
+                    if(data.details.image_url) {
+                        event.currentTarget.querySelector('img').setAttribute('src', data.details.image_url);
+                        event.currentTarget.querySelector('img').classList.remove('d-none');
+                        event.currentTarget.querySelector('[data-image-container]').classList.remove('d-none');
+                    } else {
+                        event.currentTarget.querySelector('img').setAttribute('src', '');
+                        event.currentTarget.querySelector('img').classList.add('d-none');
+                        event.currentTarget.querySelector('[data-image-container]').classList.add('d-none');
+                    }
+
+                    if(event.currentTarget.querySelector('[name="image_remove"]') && event.currentTarget.querySelector('[name="image_remove"]').checked) {
+                        event.currentTarget.querySelector('[name="image_remove"]').click();
+                    }
+
+                    event.currentTarget.querySelector('input[type="file"]').value = '';
+                }
+
+                /* Update biolink opengraph image */
+                if(event.currentTarget.getAttribute('name') == 'update_biolink' && data.details?.image_prop) {
+
+                    if(data.details.seo_image_url) {
+                        event.currentTarget.querySelector('[data-seo-image-container] img').setAttribute('src', data.details.seo_image_url);
+                        event.currentTarget.querySelector('[data-seo-image-container] img').classList.remove('d-none');
+                        event.currentTarget.querySelector('[data-seo-image-container]').classList.remove('d-none');
+                    } else {
+                        event.currentTarget.querySelector('[data-seo-image-container] img').setAttribute('src', '');
+                        event.currentTarget.querySelector('[data-seo-image-container] img').classList.add('d-none');
+                        event.currentTarget.querySelector('[data-seo-image-container]').classList.add('d-none');
+                    }
+
+                    if(event.currentTarget.querySelector('[name="seo_image_remove"]') && event.currentTarget.querySelector('[name="seo_image_remove"]').checked) {
+                        event.currentTarget.querySelector('[name="seo_image_remove"]').click();
+                    }
+
+                    event.currentTarget.querySelector('#seo_image').value = '';
                 }
 
                 update_main_url();

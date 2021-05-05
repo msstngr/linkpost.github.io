@@ -63,6 +63,14 @@ class Language {
             die('The language file is corrupted. Please make sure your JSON Language file is JSON Validated ( you can do that with an online JSON Validator by searching on Google ).');
         }
 
+        /* Include the admin language file if needed */
+        if(\Altum\Routing\Router::$path == 'admin') {
+            $admin_language = json_decode(file_get_contents(self::$path . 'admin/' . $language . '.json'));
+
+            /* Merge */
+            self::$language_objects[$language] = (object) (array_merge((array) self::$language_objects[$language], (array) $admin_language));
+        }
+
         return self::$language_objects[$language];
     }
 

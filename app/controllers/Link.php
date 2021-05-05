@@ -14,11 +14,11 @@ class Link extends Controller {
 
         Authentication::guard();
 
-        $link_id = isset($this->params[0]) ? (int) $this->params[0] : false;
+        $link_id = isset($this->params[0]) ? (int) $this->params[0] : null;
         $method = isset($this->params[1]) && in_array($this->params[1], ['settings', 'statistics']) ? $this->params[1] : 'settings';
 
         /* Make sure the link exists and is accessible to the user */
-        if(!$this->link = Database::get('*', 'links', ['link_id' => $link_id, 'user_id' => $this->user->user_id])) {
+        if(!$this->link = db()->where('link_id', $link_id)->where('user_id', $this->user->user_id)->getOne('links')) {
             redirect('dashboard');
         }
 
@@ -36,7 +36,7 @@ class Link extends Controller {
 
                 if($this->link->type == 'biolink') {
                     /* Get the links available for the biolink */
-                    $link_links_result = $this->database->query("SELECT * FROM `links` WHERE `biolink_id` = {$this->link->link_id} ORDER BY `order` ASC");
+                    $link_links_result = database()->query("SELECT * FROM `links` WHERE `biolink_id` = {$this->link->link_id} ORDER BY `order` ASC");
 
                     /* Add the modals for creating the links inside the biolink */
                     foreach(require APP_PATH . 'includes/biolink_blocks.php' as $key) {
@@ -76,30 +76,28 @@ class Link extends Controller {
             case 'statistics':
 
                 if(!$this->user->plan_settings->statistics) {
-                    $_SESSION['info'][] = $this->language->global->info_message->plan_feature_no_access;
+                    $_SESSION['info'][] = language()->global->info_message->plan_feature_no_access;
                     redirect('links');
                 }
 
                 $type = isset($_GET['type']) && in_array($_GET['type'], ['overview', 'referrer_host', 'referrer_path', 'country', 'city_name', 'os', 'browser', 'device', 'language', 'utm_source', 'utm_medium', 'utm_campaign']) ? Database::clean_string($_GET['type']) : 'overview';
-                $start_date = isset($_GET['start_date']) ? Database::clean_string($_GET['start_date']) : null;
-                $end_date = isset($_GET['end_date']) ? Database::clean_string($_GET['end_date']) : null;
 
-                $date = \Altum\Date::get_start_end_dates($start_date, $end_date);
+                $datetime = \Altum\Date::get_start_end_dates_new();
 
                 /* Get the required statistics */
                 $pageviews = [];
                 $pageviews_chart = [];
 
-                $pageviews_result = Database::$database->query("
+                $pageviews_result = database()->query("
                     SELECT
                         COUNT(`id`) AS `pageviews`,
                         SUM(`is_unique`) AS `visitors`,
-                        DATE_FORMAT(`datetime`, '%Y-%m-%d') AS `formatted_date`
+                        DATE_FORMAT(`datetime`, '{$datetime['query_date_format']}') AS `formatted_date`
                     FROM
                          `track_links`
                     WHERE
                         `link_id` = {$this->link->link_id}
-                        AND (`datetime` BETWEEN '{$date->start_date_query}' AND '{$date->end_date_query}')
+                        AND (`datetime` BETWEEN '{$datetime['query_start_date']}' AND '{$datetime['query_end_date']}')
                     GROUP BY
                         `formatted_date`
                     ORDER BY
@@ -110,9 +108,9 @@ class Link extends Controller {
                 while($row = $pageviews_result->fetch_object()) {
                     $pageviews[] = $row;
 
-                    $label = \Altum\Date::get($row->formatted_date, 5);
+                    $row->formatted_date = $datetime['process']($row->formatted_date);
 
-                    $pageviews_chart[$label] = [
+                    $pageviews_chart[$row->formatted_date] = [
                         'pageviews' => $row->pageviews,
                         'visitors' => $row->visitors
                     ];
@@ -124,17 +122,16 @@ class Link extends Controller {
                 switch($type) {
                     case 'overview':
 
-                        $result = Database::$database->query("
+                        $result = database()->query("
                             SELECT
                                 *
                             FROM
                                 `track_links`
                             WHERE
                                 `link_id` = {$this->link->link_id}
-                                AND (`datetime` BETWEEN '{$date->start_date_query}' AND '{$date->end_date_query}')
+                                AND (`datetime` BETWEEN '{$datetime['query_start_date']}' AND '{$datetime['query_end_date']}')
                             ORDER BY
                                 `datetime` DESC
-                            LIMIT 25
                         ");
 
                         break;
@@ -157,7 +154,7 @@ class Link extends Controller {
                             'language' => 'browser_language'
                         ];
 
-                        $result = Database::$database->query("
+                        $result = database()->query("
                             SELECT
                                 `{$columns[$type]}`,
                                 COUNT(*) AS `total`
@@ -165,7 +162,7 @@ class Link extends Controller {
                                  `track_links`
                             WHERE
                                 `link_id` = {$this->link->link_id}
-                                AND (`datetime` BETWEEN '{$date->start_date_query}' AND '{$date->end_date_query}')
+                                AND (`datetime` BETWEEN '{$datetime['query_start_date']}' AND '{$datetime['query_end_date']}')
                             GROUP BY
                                 `{$columns[$type]}`
                             ORDER BY
@@ -179,7 +176,7 @@ class Link extends Controller {
 
                         $referrer_host = trim(Database::clean_string($_GET['referrer_host']));
 
-                        $result = Database::$database->query("
+                        $result = database()->query("
                             SELECT
                                 `referrer_path`,
                                 COUNT(*) AS `total`
@@ -188,7 +185,7 @@ class Link extends Controller {
                             WHERE
                                 `link_id` = {$this->link->link_id}
                                 AND `referrer_host` = '{$referrer_host}'
-                                AND (`datetime` BETWEEN '{$date->start_date_query}' AND '{$date->end_date_query}')
+                                AND (`datetime` BETWEEN '{$datetime['query_start_date']}' AND '{$datetime['query_end_date']}')
                             GROUP BY
                                 `referrer_path`
                             ORDER BY
@@ -202,7 +199,7 @@ class Link extends Controller {
 
                         $country_code = trim(Database::clean_string($_GET['country_code']));
 
-                        $result = Database::$database->query("
+                        $result = database()->query("
                             SELECT
                                 `city_name`,
                                 COUNT(*) AS `total`
@@ -211,7 +208,7 @@ class Link extends Controller {
                             WHERE
                                 `link_id` = {$this->link->link_id}
                                 AND `country_code` = '{$country_code}'
-                                AND (`datetime` BETWEEN '{$date->start_date_query}' AND '{$date->end_date_query}')
+                                AND (`datetime` BETWEEN '{$datetime['query_start_date']}' AND '{$datetime['query_end_date']}')
                             GROUP BY
                                 `city_name`
                             ORDER BY
@@ -223,7 +220,7 @@ class Link extends Controller {
 
                     case 'utm_source':
 
-                        $result = Database::$database->query("
+                        $result = database()->query("
                             SELECT
                                 `utm_source`,
                                 COUNT(*) AS `total`
@@ -231,7 +228,7 @@ class Link extends Controller {
                                  `track_links`
                             WHERE
                                 `link_id` = {$this->link->link_id}
-                                AND (`datetime` BETWEEN '{$date->start_date_query}' AND '{$date->end_date_query}')
+                                AND (`datetime` BETWEEN '{$datetime['query_start_date']}' AND '{$datetime['query_end_date']}')
                                 AND `utm_source` IS NOT NULL
                             GROUP BY
                                 `utm_source`
@@ -246,7 +243,7 @@ class Link extends Controller {
 
                         $utm_source = trim(Database::clean_string($_GET['utm_source']));
 
-                        $result = Database::$database->query("
+                        $result = database()->query("
                             SELECT
                                 `utm_medium`,
                                 COUNT(*) AS `total`
@@ -255,7 +252,7 @@ class Link extends Controller {
                             WHERE
                                 `link_id` = {$this->link->link_id}
                                 AND `utm_source` = '{$utm_source}'
-                                AND (`datetime` BETWEEN '{$date->start_date_query}' AND '{$date->end_date_query}')
+                                AND (`datetime` BETWEEN '{$datetime['query_start_date']}' AND '{$datetime['query_end_date']}')
                             GROUP BY
                                 `utm_medium`
                             ORDER BY
@@ -270,7 +267,7 @@ class Link extends Controller {
                         $utm_source = trim(Database::clean_string($_GET['utm_source']));
                         $utm_medium = trim(Database::clean_string($_GET['utm_medium']));
 
-                        $result = Database::$database->query("
+                        $result = database()->query("
                             SELECT
                                 `utm_campaign`,
                                 COUNT(*) AS `total`
@@ -280,7 +277,7 @@ class Link extends Controller {
                                 `link_id` = {$this->link->link_id}
                                 AND `utm_source` = '{$utm_source}'
                                 AND `utm_medium` = '{$utm_medium}'
-                                AND (`datetime` BETWEEN '{$date->start_date_query}' AND '{$date->end_date_query}')
+                                AND (`datetime` BETWEEN '{$datetime['query_start_date']}' AND '{$datetime['query_end_date']}')
                             GROUP BY
                                 `utm_campaign`
                             ORDER BY
@@ -329,7 +326,7 @@ class Link extends Controller {
                             'statistics' => $statistics,
                             'link' => $this->link,
                             'method' => $method,
-                            'date' => $date,
+                            'datetime' => $datetime,
                         ];
 
                         break;
@@ -362,7 +359,7 @@ class Link extends Controller {
                             'total_sum' => $statistics_total_sum,
                             'link' => $this->link,
                             'method' => $method,
-                            'date' => $date,
+                            'datetime' => $datetime,
 
                             'referrer_host' => $referrer_host ?? null,
                             'country_code' => $country_code ?? null,
@@ -381,7 +378,7 @@ class Link extends Controller {
                     'link' => $this->link,
                     'method' => $method,
                     'type' => $type,
-                    'date' => $date,
+                    'datetime' => $datetime,
                     'pageviews' => $pageviews,
                     'pageviews_chart' => $pageviews_chart
                 ];
@@ -403,7 +400,7 @@ class Link extends Controller {
         $this->add_view_content('content', $view->run($data));
 
         /* Set a custom title */
-        Title::set(sprintf($this->language->link->title, $this->link->url));
+        Title::set(sprintf(language()->link->title, $this->link->url));
 
     }
 

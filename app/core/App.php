@@ -5,9 +5,9 @@ namespace Altum;
 use Altum\Middlewares\Authentication;
 use Altum\Middlewares\Csrf;
 use Altum\Models\Plan;
+use Altum\Models\Settings;
 use Altum\Models\User;
-use \Altum\Routing\Router;
-use \Altum\Models\Settings;
+use Altum\Routing\Router;
 
 class App {
 
@@ -16,7 +16,7 @@ class App {
     public function __construct() {
 
         /* Connect to the database */
-        $this->database = Database\Database::initialize();
+        Database\Database::initialize();
 
         /* Initialize caching system */
         Cache::initialize();
@@ -48,12 +48,13 @@ class App {
 
         /* Get the website settings */
         $settings = (new Settings())->get();
+        \Altum\Settings::initialize($settings);
 
         /* Initiate the Language system */
         Language::initialize(APP_PATH . 'languages/', $settings->default_language);
 
         /* Get the needed language strings */
-        $language = Language::get();
+        $language = language();
 
         /* Set the default theme style */
         ThemeStyle::set_default($settings->default_theme_style);
@@ -98,12 +99,12 @@ class App {
                 if($settings->plan_free->status) {
                     $plan_settings = json_encode($settings->plan_free->settings);
 
-                    $this->database->query("UPDATE `users` SET `plan_id` = 'free', `plan_settings` = '{$plan_settings}' WHERE `user_id` = {$user_id}");
+                    database()->query("UPDATE `users` SET `plan_id` = 'free', `plan_settings` = '{$plan_settings}' WHERE `user_id` = {$user_id}");
                 }
 
                 /* Make sure we delete the subscription_id if any */
                 if($user->payment_subscription_id) {
-                    $this->database->query("UPDATE `users` SET `payment_subscription_id` = '' WHERE `user_id` = {$user_id}");
+                    database()->query("UPDATE `users` SET `payment_subscription_id` = '' WHERE `user_id` = {$user_id}");
                 }
 
                 /* Clear the cache */
@@ -127,7 +128,7 @@ class App {
 
             /* Update the language of the user if needed */
             if(isset($_GET['language']) && in_array($_GET['language'], Language::$languages)) {
-                $this->database->query("UPDATE `users` SET `language` = '{$_GET['language']}' WHERE `user_id` = {$user_id}");
+                database()->query("UPDATE `users` SET `language` = '{$_GET['language']}' WHERE `user_id` = {$user_id}");
 
                 /* Clear the cache */
                 \Altum\Cache::$adapter->deleteItemsByTag('user_id=' . $user_id);
@@ -146,14 +147,17 @@ class App {
 
         /* Add main vars inside of the controller */
         $controller->add_params([
-            'database'  => $this->database,
-            'params'    => $params,
-            'settings'  => $settings,
-            'language'  => $language,
+            /* Extra params available from the URL */
+            'params' => $params,
 
             /* Potential logged in user */
-            'user'      => Authentication::$user
+            'user' => Authentication::$user
         ]);
+
+        /* Check for authentication checks */
+        if(!is_null(Router::$controller_settings['authentication'])) {
+            Authentication::guard(Router::$controller_settings['authentication']);
+        }
 
         /* Call the controller method */
         call_user_func_array([ $controller, $method ], []);

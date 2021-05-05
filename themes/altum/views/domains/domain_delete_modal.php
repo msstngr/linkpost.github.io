@@ -7,9 +7,9 @@
             <div class="modal-header">
                 <h5 class="modal-title">
                     <i class="fa fa-fw fa-sm fa-trash-alt text-gray-700"></i>
-                    <?= $this->language->domain_delete_modal->header ?>
+                    <?= language()->domain_delete_modal->header ?>
                 </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="<?= $this->language->global->close ?>">
+                <button type="button" class="close" data-dismiss="modal" aria-label="<?= language()->global->close ?>">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -22,10 +22,10 @@
 
                     <div class="notification-container"></div>
 
-                    <p class="text-muted"><?= $this->language->domain_delete_modal->subheader ?></p>
+                    <p class="text-muted"><?= language()->domain_delete_modal->subheader ?></p>
 
                     <div class="mt-4">
-                        <button type="submit" name="submit" class="btn btn-lg btn-block btn-danger"><?= $this->language->global->delete ?></button>
+                        <button type="submit" name="submit" class="btn btn-lg btn-block btn-danger"><?= language()->global->delete ?></button>
                     </div>
                 </form>
             </div>

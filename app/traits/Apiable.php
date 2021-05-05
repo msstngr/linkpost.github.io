@@ -2,7 +2,6 @@
 
 namespace Altum\Traits;
 
-use Altum\Database\Database;
 use Altum\Response;
 
 trait Apiable {
@@ -31,23 +30,27 @@ trait Apiable {
 
         if(!$api_key) {
             Response::jsonapi_error([[
-                'title' => $this->language->api->error_message->no_bearer,
+                'title' => language()->api->error_message->no_bearer,
                 'status' => '401'
             ]], null, 401);
         }
 
         /* Get the user data of the API key owner, if any */
-        $this->api_user = Database::get('*', 'users', ['api_key' => $api_key, 'active' => 1]);
+        $this->api_user = db()->where('api_key', $api_key)->where('active', 1)->getOne('users');
 
         if(!$this->api_user) {
-            $this->response_error($this->language->api->error_message->no_access, 401);
+            $this->response_error(language()->api->error_message->no_access, 401);
         }
 
         if($require_to_be_admin && $this->api_user->type != 1) {
-            $this->response_error($this->language->api->error_message->no_access, 401);
+            $this->response_error(language()->api->error_message->no_access, 401);
         }
 
         $this->api_user->plan_settings = json_decode($this->api_user->plan_settings);
+
+//        if(!$require_to_be_admin && !$this->api_user->plan_settings->api_is_enabled) {
+//            $this->response_error(language()->api->error_message->no_access, 401);
+//        }
 
         /* Rate limiting */
         $rate_limit_limit = 60;
@@ -85,13 +88,13 @@ trait Apiable {
 
         if($rate_limit_remaining < 0) {
             header('X-RateLimit-Reset: ' . $rate_limit_reset);
-            $this->response_error($this->language->api->error_message->rate_limit, 429);
+            $this->response_error(language()->api->error_message->rate_limit, 429);
         }
 
     }
 
     private function return_404() {
-        $this->response_error($this->language->api->error_message->not_found, 404);
+        $this->response_error(language()->api->error_message->not_found, 404);
     }
 
     private function response_error($title = '', $response_code = 400) {

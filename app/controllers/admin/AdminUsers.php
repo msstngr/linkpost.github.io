@@ -2,30 +2,26 @@
 
 namespace Altum\Controllers;
 
-use Altum\Database\Database;
+use Altum\Alerts;
+use Altum\Middlewares\Authentication;
 use Altum\Middlewares\Csrf;
 use Altum\Models\Plan;
 use Altum\Models\User;
-use Altum\Middlewares\Authentication;
-use Altum\Response;
-use Altum\Routing\Router;
 
 class AdminUsers extends Controller {
 
     public function index() {
 
-        Authentication::guard('admin');
-
         /* Prepare the filtering system */
         $filters = (new \Altum\Filters(['active', 'plan_id', 'country'], ['name', 'email'], ['email', 'date', 'last_activity', 'name', 'total_logins']));
 
         /* Prepare the paginator */
-        $total_rows = Database::$database->query("SELECT COUNT(*) AS `total` FROM `users` WHERE 1 = 1 {$filters->get_sql_where()}")->fetch_object()->total ?? 0;
+        $total_rows = database()->query("SELECT COUNT(*) AS `total` FROM `users` WHERE 1 = 1 {$filters->get_sql_where()}")->fetch_object()->total ?? 0;
         $paginator = (new \Altum\Paginator($total_rows, $filters->get_results_per_page(), $_GET['page'] ?? 1, url('admin/users?' . $filters->get_get() . '&page=%d')));
 
-        /* Get the users */
+        /* Get the data */
         $users = [];
-        $users_result = Database::$database->query("
+        $users_result = database()->query("
             SELECT
                 *
             FROM
@@ -34,7 +30,7 @@ class AdminUsers extends Controller {
                 1 = 1
                 {$filters->get_sql_where()}
                 {$filters->get_sql_order_by()}
-
+                  
             {$paginator->get_sql_limit()}
         ");
         while($row = $users_result->fetch_object()) {
@@ -47,10 +43,10 @@ class AdminUsers extends Controller {
 
         /* Requested plan details */
         $plans = [];
-        $plans['free'] = (new Plan(['settings' => $this->settings]))->get_plan_by_id('free');
-        $plans['trial'] = (new Plan(['settings' => $this->settings]))->get_plan_by_id('trial');
-        $plans['custom'] = (new Plan(['settings' => $this->settings]))->get_plan_by_id('custom');
-        $plans_result = Database::$database->query("SELECT `plan_id`, `name` FROM `plans`");
+        $plans['free'] = (new Plan())->get_plan_by_id('free');
+        $plans['trial'] = (new Plan())->get_plan_by_id('trial');
+        $plans['custom'] = (new Plan())->get_plan_by_id('custom');
+        $plans_result = database()->query("SELECT `plan_id`, `name` FROM `plans`");
         while($row = $plans_result->fetch_object()) {
             $plans[$row->plan_id] = $row;
         }
@@ -70,6 +66,7 @@ class AdminUsers extends Controller {
         $data = [
             'users' => $users,
             'plans' => $plans,
+            'paginator' => $paginator,
             'pagination' => $pagination,
             'filters' => $filters
         ];
@@ -82,12 +79,10 @@ class AdminUsers extends Controller {
 
     public function login() {
 
-        Authentication::guard();
-
-        $user_id = (isset($this->params[0])) ? $this->params[0] : false;
+        $user_id = isset($this->params[0]) ? (int) $this->params[0] : null;
 
         if(!Csrf::check('global_token')) {
-            $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
+            Alerts::add_error(language()->global->error_message->invalid_csrf_token);
             redirect('admin/users');
         }
 
@@ -96,11 +91,11 @@ class AdminUsers extends Controller {
         }
 
         /* Check if user exists */
-        if(!$user = Database::get('*', 'users', ['user_id' => $user_id])) {
+        if(!$user = db()->where('user_id', $user_id)->getOne('users')) {
             redirect('admin/users');
         }
 
-        if(empty($_SESSION['error'])) {
+        if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
 
             /* Logout of the admin */
             Authentication::logout(false);
@@ -109,8 +104,8 @@ class AdminUsers extends Controller {
             session_start();
             $_SESSION['user_id'] = $user->user_id;
 
-            /* Success message */
-            $_SESSION['success'][] = sprintf($this->language->admin_user_login_modal->success_message, $user->name);
+            /* Set a nice success message */
+            Alerts::add_success(sprintf(language()->admin_user_login_modal->success_message, $user->name));
 
             redirect('dashboard');
 
@@ -121,27 +116,25 @@ class AdminUsers extends Controller {
 
     public function delete() {
 
-        Authentication::guard();
-
-        $user_id = (isset($this->params[0])) ? $this->params[0] : false;
+        $user_id = isset($this->params[0]) ? (int) $this->params[0] : null;
 
         if(!Csrf::check('global_token')) {
-            $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
+            Alerts::add_error(language()->global->error_message->invalid_csrf_token);
             redirect('admin/users');
         }
 
         if($user_id == $this->user->user_id) {
-            $_SESSION['error'][] = $this->language->admin_users->error_message->self_delete;
+            Alerts::add_error(language()->admin_users->error_message->self_delete);
             redirect('admin/users');
         }
 
-        if(empty($_SESSION['error'])) {
+        if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
 
             /* Delete the user */
-            (new User(['settings' => $this->settings]))->delete($user_id);
+            (new User())->delete($user_id);
 
-            /* Success message */
-            $_SESSION['success'][] = $this->language->admin_user_delete_modal->success_message;
+            /* Set a nice success message */
+            Alerts::add_success(language()->admin_user_delete_modal->success_message);
 
         }
 

@@ -43,7 +43,7 @@ class Csrf extends Middleware {
 //
 //
 //        if(!self::csrf_check_session_token($name)) {
-//            if($response) Response::json($this->language->global->error_message->command_denied, 'error');
+//            if($response) Response::json(language()->global->error_message->command_denied, 'error');
 //            die();
 //        }
 //    }

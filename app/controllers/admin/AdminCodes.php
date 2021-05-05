@@ -2,25 +2,21 @@
 
 namespace Altum\Controllers;
 
-use Altum\Database\Database;
+use Altum\Alerts;
 use Altum\Middlewares\Csrf;
-use Altum\Middlewares\Authentication;
-use Altum\Models\User;
 
 class AdminCodes extends Controller {
 
     public function index() {
 
-        Authentication::guard('admin');
-
         /* Delete Modal */
         $view = new \Altum\Views\View('admin/codes/code_delete_modal', (array) $this);
         \Altum\Event::add_content($view->run(), 'modals');
 
-        $codes_result = $this->database->query("
-            SELECT `codes`.*, plans.`name` AS `plan_name`
+        $codes_result = database()->query("
+            SELECT `codes`.*, `plans`.`name` AS `plan_name`
             FROM `codes`
-            LEFT JOIN plans ON `codes`.`plan_id` = plans.plan_id
+            LEFT JOIN `plans` ON `codes`.`plan_id` = `plans`.`plan_id`
         ");
 
         /* Main View */
@@ -36,22 +32,19 @@ class AdminCodes extends Controller {
 
     public function delete() {
 
-        Authentication::guard();
-
-        $code_id = (isset($this->params[0])) ? $this->params[0] : false;
+        $code_id = isset($this->params[0]) ? (int) $this->params[0] : null;
 
         if(!Csrf::check('global_token')) {
-            $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
-            redirect('admin/codes');
+            Alerts::add_error(language()->global->error_message->invalid_csrf_token);
         }
 
-        if(empty($_SESSION['error'])) {
+        if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
 
             /* Delete the code */
-            Database::$database->query("DELETE FROM `codes` WHERE `code_id` = {$code_id}");
+            db()->where('code_id', $code_id)->delete('codes');
 
             /* Success message */
-            $_SESSION['success'][] = $this->language->admin_code_delete_modal->success_message;
+            Alerts::add_success(language()->admin_code_delete_modal->success_message);
 
         }
 

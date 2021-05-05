@@ -5,7 +5,7 @@ namespace Altum\Controllers;
 use Altum\Database\Database;
 use Altum\Middlewares\Authentication;
 use Altum\Middlewares\Csrf;
-use Altum\Models\User;
+use Altum\Models\Domain;
 use Altum\Response;
 
 class Domains extends Controller {
@@ -14,7 +14,7 @@ class Domains extends Controller {
 
         Authentication::guard();
 
-        if(!$this->settings->links->domains_is_enabled) {
+        if(!settings()->links->domains_is_enabled) {
             redirect('dashboard');
         }
 
@@ -31,12 +31,12 @@ class Domains extends Controller {
         \Altum\Event::add_content($view->run(), 'modals');
 
         /* Prepare the paginator */
-        $total_rows = Database::$database->query("SELECT COUNT(*) AS `total` FROM `domains` WHERE `user_id` = {$this->user->user_id} AND `type` = 0")->fetch_object()->total ?? 0;
+        $total_rows = database()->query("SELECT COUNT(*) AS `total` FROM `domains` WHERE `user_id` = {$this->user->user_id} AND `type` = 0")->fetch_object()->total ?? 0;
         $paginator = (new \Altum\Paginator($total_rows, 25, $_GET['page'] ?? 1, url('domains?page=%d')));
 
         /* Get the domains list for the user */
         $domains = [];
-        $domains_result = Database::$database->query("SELECT * FROM `domains` WHERE `user_id` = {$this->user->user_id} AND `type` = 0 {$paginator->get_sql_limit()}");
+        $domains_result = database()->query("SELECT * FROM `domains` WHERE `user_id` = {$this->user->user_id} AND `type` = 0 {$paginator->get_sql_limit()}");
         while($row = $domains_result->fetch_object()) $domains[] = $row;
 
         /* Prepare the pagination view */
@@ -58,18 +58,19 @@ class Domains extends Controller {
     public function create() {
         Authentication::guard();
 
-        if(!$this->settings->links->domains_is_enabled) {
+        if(!settings()->links->domains_is_enabled) {
             die();
         }
 
         $_POST['scheme'] = isset($_POST['scheme']) && in_array($_POST['scheme'], ['http://', 'https://']) ? Database::clean_string($_POST['scheme']) : 'https://';
         $_POST['host'] = trim(Database::clean_string($_POST['host']));
         $_POST['custom_index_url'] = trim(Database::clean_string($_POST['custom_index_url']));
+        $_POST['custom_not_found_url'] = trim(Database::clean_string($_POST['custom_not_found_url']));
 
         /* Make sure that the user didn't exceed the limit */
-        $user_total_domains = Database::$database->query("SELECT COUNT(*) AS `total` FROM `domains` WHERE `user_id` = {$this->user->user_id} AND `type` = 0")->fetch_object()->total;
+        $user_total_domains = database()->query("SELECT COUNT(*) AS `total` FROM `domains` WHERE `user_id` = {$this->user->user_id} AND `type` = 0")->fetch_object()->total;
         if($this->user->plan_settings->domains_limit != -1 && $user_total_domains >= $this->user->plan_settings->domains_limit) {
-            Response::json($this->language->domain_create_modal->error_message->domains_limit, 'error');
+            Response::json(language()->domain_create_modal->error_message->domains_limit, 'error');
         }
 
         if(empty($errors)) {
@@ -78,31 +79,35 @@ class Domains extends Controller {
             $type = 0;
 
             /* Add the row to the database */
-            $stmt = Database::$database->prepare("INSERT INTO `domains` (`user_id`, `scheme`, `host`, `custom_index_url`, `type`, `date`) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param('ssssss', $this->user->user_id, $_POST['scheme'], $_POST['host'], $_POST['custom_index_url'], $type, \Altum\Date::$date);
-            $stmt->execute();
-            $domain_id = $stmt->insert_id;
-            $stmt->close();
+            $domain_id = db()->insert('domains', [
+                'user_id' => $this->user->user_id,
+                'scheme' => $_POST['scheme'],
+                'host' => $_POST['host'],
+                'custom_index_url' => $_POST['custom_index_url'],
+                'custom_not_found_url' => $_POST['custom_not_found_url'],
+                'type' => $type,
+                'datetime' => \Altum\Date::$date,
+            ]);
 
             /* Send notification to admin if needed */
-            if($this->settings->email_notifications->new_domain && !empty($this->settings->email_notifications->emails)) {
+            if(settings()->email_notifications->new_domain && !empty(settings()->email_notifications->emails)) {
 
                 /* Prepare the email */
                 $email_template = get_email_template(
                     [],
-                    $this->language->global->emails->admin_new_domain_notification->subject,
+                    language()->global->emails->admin_new_domain_notification->subject,
                     [
                         '{{ADMIN_DOMAIN_UPDATE_LINK}}' => url('admin/domain-update/' . $domain_id),
                         '{{DOMAIN_HOST}}' => $_POST['host'],
                     ],
-                    $this->language->global->emails->admin_new_domain_notification->body
+                    language()->global->emails->admin_new_domain_notification->body
                 );
 
-                send_mail($this->settings, explode(',', $this->settings->email_notifications->emails), $email_template->subject, $email_template->body);
+                send_mail(explode(',', settings()->email_notifications->emails), $email_template->subject, $email_template->body);
 
             }
 
-            Response::json($this->language->domain_create_modal->success_message, 'success');
+            Response::json(language()->domain_create_modal->success_message, 'success');
 
         }
     }
@@ -111,7 +116,7 @@ class Domains extends Controller {
     public function update() {
         Authentication::guard();
 
-        if(!$this->settings->links->domains_is_enabled) {
+        if(!settings()->links->domains_is_enabled) {
             die();
         }
 
@@ -119,8 +124,9 @@ class Domains extends Controller {
         $_POST['scheme'] = isset($_POST['scheme']) && in_array($_POST['scheme'], ['http://', 'https://']) ? Database::clean_string($_POST['scheme']) : 'https://';
         $_POST['host'] = trim(Database::clean_string($_POST['host']));
         $_POST['custom_index_url'] = trim(Database::clean_string($_POST['custom_index_url']));
+        $_POST['custom_not_found_url'] = trim(Database::clean_string($_POST['custom_not_found_url']));
 
-        if(!$domain = Database::get('*', 'domains', ['user_id' => $this->user->user_id, 'domain_id' => $_POST['domain_id']])) {
+        if(!$domain = db()->where('domain_id', $_POST['domain_id'])->where('user_id', $this->user->user_id)->getOne('domains')) {
             die();
         }
 
@@ -134,30 +140,34 @@ class Domains extends Controller {
             }
 
             /* Update the database */
-            $stmt = Database::$database->prepare("UPDATE `domains` SET `scheme` = ?, `host` = ?, `custom_index_url` = ?, `is_enabled` = ? WHERE `domain_id` = ? AND `user_id` = ?");
-            $stmt->bind_param('ssssss', $_POST['scheme'], $_POST['host'], $_POST['custom_index_url'], $is_enabled, $_POST['domain_id'], $this->user->user_id);
-            $stmt->execute();
-            $stmt->close();
+            db()->where('domain_id', $domain->domain_id)->update('domains', [
+                'scheme' => $_POST['scheme'],
+                'host' => $_POST['host'],
+                'custom_index_url' => $_POST['custom_index_url'],
+                'custom_not_found_url' => $_POST['custom_not_found_url'],
+                'is_enabled' => $is_enabled,
+                'last_datetime' => \Altum\Date::$date,
+            ]);
 
             /* Send notification to admin if needed */
-            if(!$is_enabled && $this->settings->email_notifications->new_domain && !empty($this->settings->email_notifications->emails)) {
+            if(!$is_enabled && settings()->email_notifications->new_domain && !empty(settings()->email_notifications->emails)) {
 
                 /* Prepare the email */
                 $email_template = get_email_template(
                     [],
-                    $this->language->global->emails->admin_new_domain_notification->subject,
+                    language()->global->emails->admin_new_domain_notification->subject,
                     [
                         '{{ADMIN_DOMAIN_UPDATE_LINK}}' => url('admin/domain-update/' . $domain->domain_id),
                         '{{DOMAIN_HOST}}' => $_POST['host'],
                     ],
-                    $this->language->global->emails->admin_new_domain_notification->body
+                    language()->global->emails->admin_new_domain_notification->body
                 );
 
-                send_mail($this->settings, explode(',', $this->settings->email_notifications->emails), $email_template->subject, $email_template->body);
+                send_mail(explode(',', settings()->email_notifications->emails), $email_template->subject, $email_template->body);
 
             }
 
-            Response::json($this->language->domain_update_modal->success_message, 'success');
+            Response::json(language()->domain_update_modal->success_message, 'success');
 
         }
     }
@@ -166,7 +176,7 @@ class Domains extends Controller {
     public function delete() {
         Authentication::guard();
 
-        if(!$this->settings->links->domains_is_enabled) {
+        if(!settings()->links->domains_is_enabled) {
             die();
         }
 
@@ -175,22 +185,13 @@ class Domains extends Controller {
             $_POST['domain_id'] = (int) $_POST['domain_id'];
 
             /* Check for possible errors */
-            if(!Database::exists('domain_id', 'domains', ['domain_id' => $_POST['domain_id']])) {
+            if(!db()->where('domain_id', $_POST['domain_id'])->where('user_id', $this->user->user_id)->getValue('domains', 'domain_id')) {
                 die();
             }
 
-            /* Delete from database */
-            $stmt = Database::$database->prepare("DELETE FROM `domains` WHERE `domain_id` = ? AND `user_id` = ?");
-            $stmt->bind_param('ss', $_POST['domain_id'], $this->user->user_id);
-            $stmt->execute();
-            $stmt->close();
+            (new Domain())->delete($_POST['domain_id']);
 
-            $stmt = Database::$database->prepare("DELETE FROM `links` WHERE `domain_id` = ? AND `user_id` = ?");
-            $stmt->bind_param('ss', $_POST['domain_id'], $this->user->user_id);
-            $stmt->execute();
-            $stmt->close();
-
-            Response::json($this->language->domain_delete_modal->success_message, 'success');
+            Response::json(language()->domain_delete_modal->success_message, 'success');
 
         }
 

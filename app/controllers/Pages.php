@@ -10,13 +10,13 @@ class Pages extends Controller {
     public function index() {
 
         /* Check if the category url is set */
-        $pages_category_url = isset($this->params[0]) ? Database::clean_string($this->params[0]) : false;
+        $pages_category_url = isset($this->params[0]) ? Database::clean_string($this->params[0]) : null;
 
         /* If the category url is set, get it*/
         if($pages_category_url) {
 
             /* Pages category index */
-            $pages_category = $pages_category_url ? Database::get('*', 'pages_categories', ['url' => $pages_category_url]) : false;
+            $pages_category = $pages_category_url ? db()->where('url', $pages_category_url)->getOne('pages_categories') : null;
 
             /* Redirect to pages if the category is not found */
             if(!$pages_category) {
@@ -24,7 +24,7 @@ class Pages extends Controller {
             }
 
             /* Get the pages for this category */
-            $pages_result = $this->database->query("SELECT `url`, `title`, `description`, `total_views`, `type` FROM `pages` WHERE `pages_category_id` = {$pages_category->pages_category_id} ORDER BY `total_views` DESC");
+            $pages_result = database()->query("SELECT `url`, `title`, `description`, `total_views`, `type` FROM `pages` WHERE `pages_category_id` = {$pages_category->pages_category_id} ORDER BY `total_views` DESC");
 
             /* Delete Modal */
             $view = new \Altum\Views\View('admin/pages/pages_category_delete_modal', (array) $this);
@@ -46,10 +46,10 @@ class Pages extends Controller {
             /* Pages index */
 
             /* Get the popular pages */
-            $popular_pages_result = $this->database->query("SELECT `url`, `title`, `description`, `total_views`, `type` FROM `pages` ORDER BY `total_views` DESC LIMIT 6");
+            $popular_pages_result = database()->query("SELECT `url`, `title`, `description`, `total_views`, `type` FROM `pages` ORDER BY `total_views` DESC LIMIT 6");
 
             /* Get all the pages categories */
-            $pages_categories_result = $this->database->query("
+            $pages_categories_result = database()->query("
                 SELECT 
                     `pages_categories`.`url`,
                     `pages_categories`.`title`,

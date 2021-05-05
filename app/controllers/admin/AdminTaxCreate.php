@@ -2,16 +2,13 @@
 
 namespace Altum\Controllers;
 
+use Altum\Alerts;
 use Altum\Database\Database;
-use Altum\Date;
 use Altum\Middlewares\Csrf;
-use Altum\Middlewares\Authentication;
 
 class AdminTaxCreate extends Controller {
 
     public function index() {
-
-        Authentication::guard('admin');
 
         if(!empty($_POST)) {
             /* Filter some the variables */
@@ -25,18 +22,25 @@ class AdminTaxCreate extends Controller {
             $_POST['countries'] = isset($_POST['countries']) ? Database::clean_array($_POST['countries']) : null;
 
             if(!Csrf::check()) {
-                $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
+                Alerts::add_error(language()->global->error_message->invalid_csrf_token);
             }
 
-            if(empty($_SESSION['error'])) {
-                /* Update the database */
-                $stmt = Database::$database->prepare("INSERT INTO `taxes` (`internal_name`, `name`, `description`, `value`, `value_type`, `type`, `billing_type`, `countries`, `datetime`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param('sssssssss', $_POST['internal_name'], $_POST['name'], $_POST['description'], $_POST['value'], $_POST['value_type'], $_POST['type'], $_POST['billing_type'], $_POST['countries'], Date::$date);
-                $stmt->execute();
-                $stmt->close();
+            if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
+
+                /* Database query */
+                db()->insert('taxes', [
+                    'internal_name' => $_POST['internal_name'],
+                    'name' => $_POST['name'],
+                    'description' => $_POST['description'],
+                    'value' => $_POST['value'],
+                    'value_type' => $_POST['value_type'],
+                    'billing_type' => $_POST['billing_type'],
+                    'countries' => json_encode($_POST['countries']),
+                    'datetime' => \Altum\Date::$date,
+                ]);
 
                 /* Set a nice success message */
-                $_SESSION['success'][] = $this->language->global->success_message->basic;
+                Alerts::add_success(language()->global->success_message->basic);
 
                 redirect('admin/taxes');
             }

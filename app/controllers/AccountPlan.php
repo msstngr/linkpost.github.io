@@ -2,8 +2,7 @@
 
 namespace Altum\Controllers;
 
-use Altum\Database\Database;
-use Altum\Logger;
+use Altum\Alerts;
 use Altum\Middlewares\Authentication;
 use Altum\Middlewares\Csrf;
 use Altum\Models\Plan;
@@ -30,7 +29,7 @@ class AccountPlan extends Controller {
     public function redeem_code() {
         Authentication::guard();
 
-        if(!$this->settings->payment->is_enabled || !$this->settings->payment->codes_is_enabled) {
+        if(!settings()->payment->is_enabled || !settings()->payment->codes_is_enabled) {
             redirect('account-plan');
         }
 
@@ -39,37 +38,35 @@ class AccountPlan extends Controller {
         }
 
         if(!Csrf::check()) {
-            $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
+            Alerts::add_error(language()->global->error_message->invalid_csrf_token);
             redirect('account-plan');
         }
 
-        $_POST['code'] = Database::clean_string($_POST['code']);
-
         /* Make sure the discount code exists */
-        $code = $this->database->query("SELECT * FROM `codes` WHERE `code` = '{$_POST['code']}' AND `type` = 'redeemable'")->fetch_object();
+        $code = db()->where('code', $_POST['code'])->where('type', 'redeemable')->getOne('codes');
 
         if(!$code) {
-            $_SESSION['error'][] = $this->language->account_plan->error_message->code_invalid;
+            Alerts::add_field_error('code', language()->account_plan->error_message->code_invalid);
             redirect('account-plan');
         }
 
         /* Make sure the plan id exists and get details about it */
-        $plan = (new Plan(['settings' => $this->settings]))->get_plan_by_id($code->plan_id);
+        $plan = (new Plan())->get_plan_by_id($code->plan_id);
 
         if(!$plan) {
-            $_SESSION['error'][] = $this->language->account_plan->error_message->code_invalid;
+            Alerts::add_field_error('code', language()->account_plan->error_message->code_invalid);
             redirect('account-plan');
         }
 
         /* Make sure the code was not used previously */
-        if(Database::exists('id', 'redeemed_codes', ['user_id' => $this->user->user_id, 'code_id' => $code->code_id])) {
-            $_SESSION['error'][] = $this->language->account_plan->error_message->code_used;
+        if(db()->where('user_id', $this->user->user_id)->where('code_id', $code->code_id)->getOne('redeemed_codes', ['id'])) {
+            Alerts::add_field_error('code', language()->account_plan->error_message->code_used);
             redirect('account-plan');
         }
 
         /* Cancel current subscription */
         try {
-            (new User(['settings' => $this->settings, 'user' => $this->user]))->cancel_subscription();
+            (new User(['user' => $this->user]))->cancel_subscription();
         } catch (\Exception $exception) {
 
             /* Output errors properly */
@@ -79,43 +76,29 @@ class AccountPlan extends Controller {
                 die();
             } else {
 
-                $_SESSION['error'][] = $exception->getMessage();
+                Alerts::add_error($exception->getMessage());
                 redirect('account-plan');
 
             }
         }
 
-        if(empty($_SESSION['error'])) {
+        if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
 
             $plan_expiration_date = (new \DateTime())->modify('+' . $code->days . ' days')->format('Y-m-d H:i:s');
             $plan_settings = json_encode($plan->settings);
 
-            /* Update the user plan */
-            $stmt = $this->database->prepare("
-                UPDATE
-                    `users`
-                SET
-                    `plan_id` = ?,
-                    `plan_expiration_date` = ?,
-                    `plan_settings` = ?
-                WHERE
-                    `user_id` = ?
-            ");
-            $stmt->bind_param(
-                'ssss',
-                $plan->plan_id,
-                $plan_expiration_date,
-                $plan_settings,
-                $this->user->user_id
-            );
-            $stmt->execute();
-            $stmt->close();
+            /* Database query */
+            db()->where('user_id', $this->user->user_id)->update('users', [
+                'plan_id' => $plan->plan_id,
+                'plan_expiration_date' => $plan_expiration_date,
+                'plan_settings' => $plan_settings
+            ]);
 
             /* Update the code usage */
-            $this->database->query("UPDATE `codes` SET `redeemed` = `redeemed` + 1 WHERE `code_id` = {$code->code_id}");
+            db()->where('code_id', $code->code_id)->update('codes', ['redeemed' => db()->inc()]);
 
             /* Add log for the redeemed code */
-            Database::insert('redeemed_codes', [
+            db()->insert('redeemed_codes', [
                 'code_id'   => $code->code_id,
                 'user_id'   => $this->user->user_id,
                 'date'      => \Altum\Date::$date
@@ -124,10 +107,8 @@ class AccountPlan extends Controller {
             /* Clear the cache */
             \Altum\Cache::$adapter->deleteItemsByTag('user_id=' . $this->user->user_id);
 
-            Logger::users($this->user->user_id, 'codes.redeemed_code=' . $code->code);
-
-            /* Success */
-            $_SESSION['success'][] = $this->language->account_plan->success_message->code_redeemed;
+            /* Set a nice success message */
+            Alerts::add_success(language()->account_plan->success_message->code_redeemed);
 
             redirect('account-plan');
         }
@@ -137,11 +118,9 @@ class AccountPlan extends Controller {
     public function code() {
         Authentication::guard();
 
-        if(!Csrf::check('global_token')) {
-            die();
-        }
+        $_POST = json_decode(file_get_contents('php://input'), true);
 
-        if(!$this->settings->payment->is_enabled || !$this->settings->payment->codes_is_enabled) {
+        if(!Csrf::check('global_token')) {
             die();
         }
 
@@ -149,27 +128,29 @@ class AccountPlan extends Controller {
             die();
         }
 
-        $_POST['code'] = Database::clean_string($_POST['code']);
+        if(!settings()->payment->is_enabled || !settings()->payment->codes_is_enabled) {
+            die();
+        }
 
         /* Make sure the discount code exists */
-        $code = $this->database->query("SELECT * FROM `codes` WHERE `code` = '{$_POST['code']}' AND `redeemed` < `quantity` AND `type` = 'redeemable'")->fetch_object();
+        $code = db()->where('code', $_POST['code'])->where('type', 'redeemable')->where('redeemed < quantity')->getOne('codes');
 
         if(!$code) {
-            Response::json($this->language->account_plan->error_message->code_invalid, 'error');
+            Response::json(language()->account_plan->error_message->code_invalid, 'error');
         }
 
         /* Make sure the plan id exists and get details about it */
-        $plan = (new Plan(['settings' => $this->settings]))->get_plan_by_id($code->plan_id);
+        $plan = (new Plan())->get_plan_by_id($code->plan_id);
 
         if(!$plan) {
-            Response::json($this->language->account_plan->error_message->code_invalid, 'error');
+            Response::json(language()->account_plan->error_message->code_invalid, 'error');
         }
 
         /* Make sure the code was not used previously */
-        if(Database::exists('id', 'redeemed_codes', ['user_id' => $this->user->user_id, 'code_id' => $code->code_id])) {
-            Response::json($this->language->account_plan->error_message->code_used, 'error');
+        if(db()->where('user_id', $this->user->user_id)->where('code_id', $code->code_id)->getOne('redeemed_codes', ['id'])) {
+            Response::json(language()->account_plan->error_message->code_used, 'error');
         }
 
-        Response::json(sprintf($this->language->account_plan->success_message->code, '<strong>' . $plan->name . '</strong>', '<strong>' . $code->days . '</strong>'), 'success', ['discount' => $code->discount]);
+        Response::json(sprintf(language()->account_plan->success_message->code, '<strong>' . $plan->name . '</strong>', '<strong>' . $code->days . '</strong>'), 'success', ['discount' => $code->discount]);
     }
 }

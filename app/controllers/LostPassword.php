@@ -2,9 +2,8 @@
 
 namespace Altum\Controllers;
 
+use Altum\Alerts;
 use Altum\Captcha;
-use Altum\Database\Database;
-use Altum\Language;
 use Altum\Logger;
 use Altum\Middlewares\Authentication;
 
@@ -20,11 +19,7 @@ class LostPassword extends Controller {
         ];
 
         /* Initiate captcha */
-        $captcha = new Captcha([
-            'type' => $this->settings->captcha->type,
-            'recaptcha_public_key' => $this->settings->captcha->recaptcha_public_key,
-            'recaptcha_private_key' => $this->settings->captcha->recaptcha_private_key
-        ]);
+        $captcha = new Captcha();
 
         if(!empty($_POST)) {
             /* Clean the posted variable */
@@ -32,24 +27,24 @@ class LostPassword extends Controller {
             $values['email'] = $_POST['email'];
 
             /* Check for any errors */
-            if($this->settings->captcha->lost_password_is_enabled && !$captcha->is_valid()) {
-                $_SESSION['error'][] = $this->language->global->error_message->invalid_captcha;
+            if(settings()->captcha->lost_password_is_enabled && !$captcha->is_valid()) {
+                Alerts::add_field_error('captcha', language()->global->error_message->invalid_captcha);
             }
 
             /* If there are no errors, resend the activation link */
-            if(empty($_SESSION['error'])) {
+            if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
 
-                $this_account = Database::get(['user_id', 'email', 'name', 'active', 'language'], 'users', ['email' => $_POST['email']]);
+                $this_account = db()->where('email', $_POST['email'])->getOne('users', ['user_id', 'email', 'name', 'active', 'language']);
 
                 if($this_account && $this_account->active != 2) {
                     /* Define some variables */
                     $lost_password_code = md5($_POST['email'] . microtime());
 
                     /* Update the current activation email */
-                    Database::$database->query("UPDATE `users` SET `lost_password_code` = '{$lost_password_code}' WHERE `user_id` = {$this_account->user_id}");
+                    db()->where('user_id', $this_account->user_id)->update('users', ['lost_password_code' => $lost_password_code]);
 
                     /* Get the language for the user */
-                    $language = Language::get($this_account->language);
+                    $language = language($this_account->language);
 
                     /* Prepare the email */
                     $email_template = get_email_template(
@@ -65,13 +60,13 @@ class LostPassword extends Controller {
                     );
 
                     /* Send the email */
-                    send_mail($this->settings, $this_account->email, $email_template->subject, $email_template->body);
+                    send_mail($this_account->email, $email_template->subject, $email_template->body);
 
-                    Logger::users($this_account->user_id, 'lost_password.request');
+                    Logger::users($this_account->user_id, 'lost_password.request_sent');
                 }
 
-                /* Set success message */
-                $_SESSION['success'][] = $this->language->lost_password->notice_message->success;
+                /* Set a nice success message */
+                Alerts::add_success(language()->lost_password->success_message);
             }
         }
 

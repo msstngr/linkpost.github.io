@@ -42,9 +42,7 @@ $settings = require THEME_PATH . 'views/link/settings/' . strtolower($data->link
         /* Refresh iframe */
         if($('#biolink_preview_iframe').length) {
             let biolink_preview_iframe = $('#biolink_preview_iframe');
-            let biolink_preview_iframe_new_full_url = `${biolink_preview_iframe.data('url-prepend')}${new_url}${biolink_preview_iframe.data('url-append')}`;
-
-            biolink_preview_iframe.attr('src', biolink_preview_iframe_new_full_url);
+            biolink_preview_iframe.attr('src', biolink_preview_iframe.attr('src'));
         }
     };
 

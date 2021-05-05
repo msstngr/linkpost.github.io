@@ -2,12 +2,7 @@
 
 namespace Altum\Controllers;
 
-use Altum\Database\Database;
 use Altum\Middlewares\Authentication;
-use Altum\Middlewares\Csrf;
-use Altum\Models\Plan;
-use Altum\Models\User;
-use Altum\Routing\Router;
 
 class AccountLogs extends Controller {
 
@@ -16,12 +11,12 @@ class AccountLogs extends Controller {
         Authentication::guard();
 
         /* Prepare the paginator */
-        $total_rows = Database::$database->query("SELECT COUNT(*) AS `total` FROM `users_logs` WHERE `user_id` = {$this->user->user_id}")->fetch_object()->total ?? 0;
+        $total_rows = database()->query("SELECT COUNT(*) AS `total` FROM `users_logs` WHERE `user_id` = {$this->user->user_id}")->fetch_object()->total ?? 0;
         $paginator = (new \Altum\Paginator($total_rows, 25, $_GET['page'] ?? 1, url('account-logs?page=%d')));
 
         /* Get the logs list for the user */
         $logs = [];
-        $logs_result = Database::$database->query("SELECT * FROM `users_logs` WHERE `user_id` = {$this->user->user_id} ORDER BY `id` DESC {$paginator->get_sql_limit()}");
+        $logs_result = database()->query("SELECT * FROM `users_logs` WHERE `user_id` = {$this->user->user_id} ORDER BY `id` DESC {$paginator->get_sql_limit()}");
         while($row = $logs_result->fetch_object()) $logs[] = $row;
 
         /* Prepare the pagination view */

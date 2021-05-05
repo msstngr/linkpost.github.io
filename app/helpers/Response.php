@@ -20,7 +20,7 @@ class Response {
     }
 
     /* jsonapi.org */
-    public static function jsonapi_success($data, $meta = null, $response_code = 200) {
+    public static function jsonapi_success($data, $meta = null, $response_code = 200, $others = null) {
         http_response_code($response_code);
 
         $response = [
@@ -30,6 +30,10 @@ class Response {
         if($meta) {
             $response['meta'] = $meta;
         };
+
+        if($others) {
+            $response = array_merge($response, $others);
+        }
 
         echo json_encode($response);
 

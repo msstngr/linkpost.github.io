@@ -5,8 +5,8 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title"><?= $this->language->create_link_modal->header ?></h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="<?= $this->language->global->close ?>">
+                <h5 class="modal-title"><?= language()->create_link_modal->header ?></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="<?= language()->global->close ?>">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -20,17 +20,17 @@
                     <div class="notification-container"></div>
 
                     <div class="form-group">
-                        <label><i class="fa fa-fw fa-signature fa-sm mr-1"></i> <?= $this->language->create_link_modal->input->location_url ?></label>
-                        <input type="text" class="form-control" name="location_url" required="required" placeholder="<?= $this->language->create_link_modal->input->location_url_placeholder ?>" />
+                        <label><i class="fa fa-fw fa-signature fa-sm mr-1"></i> <?= language()->create_link_modal->input->location_url ?></label>
+                        <input type="text" class="form-control" name="location_url" required="required" placeholder="<?= language()->create_link_modal->input->location_url_placeholder ?>" />
                     </div>
 
                     <div class="form-group">
-                        <label><i class="fa fa-fw fa-link"></i> <?= $this->language->create_link_modal->input->url ?></label>
+                        <label><i class="fa fa-fw fa-link"></i> <?= language()->create_link_modal->input->url ?></label>
                         <div class="input-group">
                             <div class="input-group-prepend">
                                 <?php if(count($data->domains)): ?>
                                     <select name="domain_id" class="appearance-none select-custom-altum form-control input-group-text">
-                                        <?php if($this->settings->links->main_domain_is_enabled || \Altum\Middlewares\Authentication::is_admin()): ?>
+                                        <?php if(settings()->links->main_domain_is_enabled || \Altum\Middlewares\Authentication::is_admin()): ?>
                                             <option value=""><?= url() ?></option>
                                         <?php endif ?>
 
@@ -46,16 +46,16 @@
                                 type="text"
                                 class="form-control"
                                 name="url"
-                                placeholder="<?= $this->user->plan_settings->custom_url ? $this->language->create_link_modal->input->url_placeholder_custom : $this->language->create_link_modal->input->url_placeholder ?>"
+                                placeholder="<?= $this->user->plan_settings->custom_url ? language()->create_link_modal->input->url_placeholder_custom : language()->create_link_modal->input->url_placeholder ?>"
                                 <?= !$this->user->plan_settings->custom_url ? 'readonly="readonly"' : null ?>
-                                <?= $this->user->plan_settings->custom_url ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>
+                                <?= $this->user->plan_settings->custom_url ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>
                             />
                         </div>
-                        <small class="form-text text-muted"><?= $this->language->create_link_modal->input->url_help ?></small>
+                        <small class="form-text text-muted"><?= language()->create_link_modal->input->url_help ?></small>
                     </div>
 
                     <div class="text-center mt-4">
-                        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= $this->language->create_link_modal->input->submit ?></button>
+                        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= language()->create_link_modal->input->submit ?></button>
                     </div>
                 </form>
             </div>
@@ -69,8 +69,8 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title"><?= $this->language->create_biolink_modal->header ?></h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="<?= $this->language->global->close ?>">
+                <h5 class="modal-title"><?= language()->create_biolink_modal->header ?></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="<?= language()->global->close ?>">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -84,12 +84,12 @@
                     <div class="notification-container"></div>
 
                     <div class="form-group">
-                        <label><i class="fa fa-fw fa-link"></i> <?= $this->language->create_biolink_modal->input->url ?></label>
+                        <label><i class="fa fa-fw fa-link"></i> <?= language()->create_biolink_modal->input->url ?></label>
                         <div class="input-group">
                             <div class="input-group-prepend">
                                 <?php if(count($data->domains)): ?>
                                     <select name="domain_id" class="appearance-none select-custom-altum form-control input-group-text">
-                                        <?php if($this->settings->links->main_domain_is_enabled || \Altum\Middlewares\Authentication::is_admin()): ?>
+                                        <?php if(settings()->links->main_domain_is_enabled || \Altum\Middlewares\Authentication::is_admin()): ?>
                                             <option value=""><?= url() ?></option>
                                         <?php endif ?>
 
@@ -105,16 +105,16 @@
                                 type="text"
                                 class="form-control"
                                 name="url"
-                                placeholder="<?= $this->user->plan_settings->custom_url ? $this->language->create_biolink_modal->input->url_placeholder_custom :  $this->language->create_biolink_modal->input->url_placeholder ?>"
+                                placeholder="<?= $this->user->plan_settings->custom_url ? language()->create_biolink_modal->input->url_placeholder_custom :  language()->create_biolink_modal->input->url_placeholder ?>"
                                 <?= !$this->user->plan_settings->custom_url ? 'readonly="readonly"' : null ?>
-                                <?= $this->user->plan_settings->custom_url ? null : 'data-toggle="tooltip" title="' . $this->language->global->info_message->plan_feature_no_access . '"' ?>
+                                <?= $this->user->plan_settings->custom_url ? null : 'data-toggle="tooltip" title="' . language()->global->info_message->plan_feature_no_access . '"' ?>
                             />
                         </div>
-                        <small class="form-text text-muted"><?= $this->language->create_biolink_modal->input->url_help ?></small>
+                        <small class="form-text text-muted"><?= language()->create_biolink_modal->input->url_help ?></small>
                     </div>
 
                     <div class="text-center mt-4">
-                        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= $this->language->create_biolink_modal->input->submit ?></button>
+                        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= language()->create_biolink_modal->input->submit ?></button>
                     </div>
                 </form>
             </div>

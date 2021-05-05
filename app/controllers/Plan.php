@@ -8,7 +8,7 @@ class Plan extends Controller {
 
     public function index() {
 
-        if(!$this->settings->payment->is_enabled) {
+        if(!settings()->payment->is_enabled) {
             redirect();
         }
 

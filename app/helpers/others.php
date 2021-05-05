@@ -56,7 +56,7 @@ function nr($number, $decimals = 0, $extra = false) {
         if(!$touched && (!is_array($extra) || (is_array($extra) && in_array('B', $extra)))) {
 
             if($number > 999999999) {
-                $formatted_number = number_format($number / 1000000000, $decimals, \Altum\Language::get()->global->number->decimal_point, \Altum\Language::get()->global->number->thousands_separator) . 'B';
+                $formatted_number = number_format($number / 1000000000, $decimals, language()->global->number->decimal_point, language()->global->number->thousands_separator) . 'B';
 
                 $touched = true;
             }
@@ -66,7 +66,7 @@ function nr($number, $decimals = 0, $extra = false) {
         if(!$touched && (!is_array($extra) || (is_array($extra) && in_array('M', $extra)))) {
 
             if($number > 999999) {
-                $formatted_number = number_format($number / 1000000, $decimals, \Altum\Language::get()->global->number->decimal_point, \Altum\Language::get()->global->number->thousands_separator) . 'M';
+                $formatted_number = number_format($number / 1000000, $decimals, language()->global->number->decimal_point, language()->global->number->thousands_separator) . 'M';
 
                 $touched = true;
             }
@@ -76,7 +76,7 @@ function nr($number, $decimals = 0, $extra = false) {
         if(!$touched && (!is_array($extra) || (is_array($extra) && in_array('K', $extra)))) {
 
             if($number > 999) {
-                $formatted_number = number_format($number / 1000, $decimals, \Altum\Language::get()->global->number->decimal_point, \Altum\Language::get()->global->number->thousands_separator) . 'K';
+                $formatted_number = number_format($number / 1000, $decimals, language()->global->number->decimal_point, language()->global->number->thousands_separator) . 'K';
 
                 $touched = true;
             }
@@ -95,7 +95,7 @@ function nr($number, $decimals = 0, $extra = false) {
         return 0;
     }
 
-    return number_format($number, $decimals, \Altum\Language::get()->global->number->decimal_point, \Altum\Language::get()->global->number->thousands_separator);
+    return number_format($number, $decimals, language()->global->number->decimal_point, language()->global->number->thousands_separator);
 }
 
 function get_domain($url) {
@@ -145,10 +145,12 @@ function get_device_type($user_agent) {
     }
 }
 
-function process_export_json($array_of_objects, $type = '', $type_array = []) {
+
+
+function process_export_json($array_of_objects, $type = '', $type_array = [], $file_name = 'data') {
 
     if(isset($_GET['export']) && $_GET['export'] == 'json') {
-        header('Content-Disposition: attachment; filename="data.json";');
+        header('Content-Disposition: attachment; filename="' . $file_name . '.json";');
         header('Content-Type: application/json; charset=UTF-8');
 
         $json = json_exporter($array_of_objects, $type, $type_array);
@@ -175,10 +177,10 @@ function json_exporter($array_of_objects, $type = 'basic', $type_array = []) {
     return json_encode($array_of_objects);
 }
 
-function process_export_csv($array, $type = '', $type_array = []) {
+function process_export_csv($array, $type = '', $type_array = [], $file_name = 'data') {
 
     if(isset($_GET['export']) && $_GET['export'] == 'csv') {
-        header('Content-Disposition: attachment; filename="data.csv";');
+        header('Content-Disposition: attachment; filename="' . $file_name . '.csv";');
         header('Content-Type: application/csv; charset=UTF-8');
 
         $csv = csv_exporter($array, $type, $type_array);
@@ -188,7 +190,7 @@ function process_export_csv($array, $type = '', $type_array = []) {
 
 }
 
-function csv_exporter($array, $type = '', $type_array = []) {
+function csv_exporter($array, $type = 'basic', $type_array = []) {
 
     $result = '';
 
@@ -196,7 +198,7 @@ function csv_exporter($array, $type = '', $type_array = []) {
     $headers = [];
     foreach(array_keys((array) reset($array)) as $value) {
         /* Check if not excluded */
-        if(($type == 'exclude' && !in_array($value, $type_array)) || ($type == 'include' && in_array($value, $type_array))) {
+        if(($type == 'exclude' && !in_array($value, $type_array)) || ($type == 'include' && in_array($value, $type_array)) || $type == 'basic') {
             $headers[] = '"' . $value . '"';
         }
     }
@@ -211,7 +213,7 @@ function csv_exporter($array, $type = '', $type_array = []) {
 
         foreach($row as $key => $value) {
             /* Check if not excluded */
-            if(($type == 'exclude' && !in_array($key, $type_array)) || ($type == 'include' && in_array($key, $type_array))) {
+            if(($type == 'exclude' && !in_array($key, $type_array)) || ($type == 'include' && in_array($key, $type_array)) || $type == 'basic') {
                 $row_array[] = '"' . addslashes($value) . '"';
             }
         }
@@ -719,4 +721,39 @@ function include_view($view_path, $data = []) {
     require $view_path;
 
     return ob_get_clean();
+}
+
+function get_max_upload() {
+    return min(convert_php_size_to_mb(ini_get('upload_max_filesize')), convert_php_size_to_mb(ini_get('post_max_size')), convert_php_size_to_mb(ini_get('memory_limit')));
+}
+
+function convert_php_size_to_mb($string)
+{
+    $suffix = strtoupper(substr($string, -1));
+
+    if(!in_array($suffix, ['P','T','G','M','K'])){
+        return (int) $string;
+    }
+
+    $value = substr($string, 0, -1);
+
+    switch($suffix) {
+        case 'P':
+            $value *= 1000 * 1000 * 100;
+            break;
+        case 'T':
+            $value *= 1000 * 1000;
+            break;
+        case 'G':
+            $value *= 1000;
+            break;
+        case 'M':
+            /* :) */
+            break;
+        case 'K':
+            $value = $value / 1000;
+            break;
+    }
+
+    return (float) $value;
 }

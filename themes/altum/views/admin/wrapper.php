@@ -1,15 +1,15 @@
 <?php defined('ALTUMCODE') || die() ?>
 <!DOCTYPE html>
-<html class="admin" lang="<?= $this->language->language_code ?>">
+<html class="admin" lang="<?= language()->language_code ?>">
     <head>
         <title><?= \Altum\Title::get() ?></title>
         <base href="<?= SITE_URL; ?>">
         <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <meta http-equiv="content-language" content="<?= $this->language->language_code ?>" />
+        <meta http-equiv="content-language" content="<?= language()->language_code ?>" />
 
-        <?php if(!empty($this->settings->favicon)): ?>
-            <link href="<?= SITE_URL . UPLOADS_URL_PATH . 'favicon/' . $this->settings->favicon ?>" rel="shortcut icon" />
+        <?php if(!empty(settings()->favicon)): ?>
+            <link href="<?= SITE_URL . UPLOADS_URL_PATH . 'favicon/' . settings()->favicon ?>" rel="shortcut icon" />
         <?php endif ?>
 
         <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700&display=swap" rel="stylesheet">

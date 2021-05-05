@@ -44,7 +44,7 @@ function phishtank_check($url, $api_key = '') {
 function google_safe_browsing_check($url, $api_key = '') {
     $api_url = 'https://safebrowsing.googleapis.com/v4/threatMatches:find?key=' . $api_key;
 
-    $body = [
+    $body = Unirest\Request\Body::json([
         'client' => [
             'clientId' => '',
             'clientVersion' => '1.5.2'
@@ -58,9 +58,14 @@ function google_safe_browsing_check($url, $api_key = '') {
             ]
         ]
 
+    ]);
+
+    $headers = [
+        'Content-Type' => 'application/json',
+        'Authorization' => 'Token :)'
     ];
 
-    $response = Unirest\Request::post($api_url, null, $body);
+    $response = Unirest\Request::post($api_url, $headers, $body);
 
     if(isset($response->body->matches[0]->threatType) && $response->body->matches[0]->threatType) return true;
 

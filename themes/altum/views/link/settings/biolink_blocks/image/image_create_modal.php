@@ -5,8 +5,8 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title"><?= $this->language->create_biolink_image_modal->header ?></h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="<?= $this->language->global->close ?>">
+                <h5 class="modal-title"><?= language()->create_biolink_image_modal->header ?></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="<?= language()->global->close ?>">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -22,17 +22,17 @@
                     <div class="notification-container"></div>
 
                     <div class="form-group">
-                        <label><i class="fa fa-fw fa-image fa-sm mr-1"></i> <?= $this->language->create_biolink_image_modal->input->image ?></label>
-                        <input type="file" name="image" accept=".gif, .png, .jpg, .jpeg, .svg" class="form-control" required="required" />
+                        <label><i class="fa fa-fw fa-image fa-sm mr-1"></i> <?= language()->create_biolink_image_modal->input->image ?></label>
+                        <input type="file" name="image" accept=".gif, .png, .jpg, .jpeg, .svg" class="form-control-file" required="required" />
                     </div>
 
                     <div class="form-group">
-                        <label><i class="fa fa-fw fa-link fa-sm mr-1"></i> <?= $this->language->create_biolink_image_modal->input->location_url ?></label>
+                        <label><i class="fa fa-fw fa-link fa-sm mr-1"></i> <?= language()->create_biolink_image_modal->input->location_url ?></label>
                         <input type="text" class="form-control" name="location_url" />
                     </div>
 
                     <div class="text-center mt-4">
-                        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= $this->language->global->submit ?></button>
+                        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= language()->global->submit ?></button>
                     </div>
                 </form>
             </div>

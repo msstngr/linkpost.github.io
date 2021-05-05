@@ -4,13 +4,13 @@
 
 <section class="container">
 
-    <?php display_notifications() ?>
+    <?= \Altum\Alerts::output_alerts() ?>
 
     <nav aria-label="breadcrumb">
         <small>
             <ol class="custom-breadcrumbs">
-                <li><a href="<?= url('dashboard') ?>"><?= $this->language->dashboard->breadcrumb ?></a> <i class="fa fa-fw fa-angle-right"></i></li>
-                <li class="active" aria-current="page"><?= $this->language->links->breadcrumb ?></li>
+                <li><a href="<?= url('dashboard') ?>"><?= language()->dashboard->breadcrumb ?></a> <i class="fa fa-fw fa-angle-right"></i></li>
+                <li class="active" aria-current="page"><?= language()->links->breadcrumb ?></li>
             </ol>
         </small>
     </nav>

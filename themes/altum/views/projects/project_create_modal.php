@@ -5,8 +5,8 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title"><?= $this->language->project_create_modal->header ?></h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="<?= $this->language->global->close ?>">
+                <h5 class="modal-title"><?= language()->project_create_modal->header ?></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="<?= language()->global->close ?>">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -19,12 +19,18 @@
                     <input type="hidden" name="request_type" value="create" />
 
                     <div class="form-group">
-                        <label><i class="fa fa-fw fa-signature fa-sm mr-1"></i> <?= $this->language->project_create_modal->input->name ?></label>
-                        <input type="text" class="form-control" name="name" required="required" />
+                        <label for="create_name"><i class="fa fa-fw fa-signature fa-sm mr-1"></i> <?= language()->projects->input->name ?></label>
+                        <input type="text" id="create_name" class="form-control" name="name" required="required" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="create_color"><i class="fa fa-fw fa-palette fa-sm text-muted mr-1"></i> <?= language()->projects->input->color ?></label>
+                        <input type="color" id="create_color" name="color" class="form-control" value="#000000" required="required" />
+                        <small class="text-muted form-text"><?= language()->projects->input->color_help ?></small>
                     </div>
 
                     <div class="text-center mt-4">
-                        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= $this->language->global->create ?></button>
+                        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= language()->global->create ?></button>
                     </div>
                 </form>
             </div>

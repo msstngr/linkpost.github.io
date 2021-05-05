@@ -4,7 +4,6 @@ return [
     'additional_global_domains',
     'custom_url',
     'deep_links',
-    'no_ads',
     'removable_branding',
     'custom_branding',
     'custom_colored_links',
@@ -20,5 +19,7 @@ return [
     'fonts',
     'password',
     'sensitive_content',
-    'leap_link'
+    'leap_link',
+    'no_ads',
+    'api_is_enabled'
 ];

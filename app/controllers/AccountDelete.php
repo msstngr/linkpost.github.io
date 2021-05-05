@@ -2,7 +2,7 @@
 
 namespace Altum\Controllers;
 
-use Altum\Database\Database;
+use Altum\Alerts;
 use Altum\Middlewares\Authentication;
 use Altum\Middlewares\Csrf;
 use Altum\Models\User;
@@ -17,17 +17,17 @@ class AccountDelete extends Controller {
 
             /* Check for any errors */
             if(!Csrf::check()) {
-                $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
+                Alerts::add_error(language()->global->error_message->invalid_csrf_token);
             }
 
             if(!password_verify($_POST['current_password'], $this->user->password)) {
-                $_SESSION['error'][] = $this->language->account->error_message->invalid_current_password;
+                Alerts::add_field_error('current_password', language()->account->error_message->invalid_current_password);
             }
 
-            if(empty($_SESSION['error'])) {
+            if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
 
                 /* Delete the user */
-                (new User(['settings' => $this->settings]))->delete($this->user->user_id);
+                (new User())->delete($this->user->user_id);
 
                 Authentication::logout();
 

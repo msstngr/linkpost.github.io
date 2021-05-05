@@ -7,11 +7,11 @@
             <div class="col-12 col-sm-4 mb-4 mb-sm-0">
                 <div class="mb-2">
                     <a class="h5 p-0" href="<?= url() ?>">
-                        <?= $this->settings->title ?>
+                        <?= settings()->title ?>
                     </a>
                 </div>
 
-                <div><?= sprintf($this->language->global->footer->copyright, date('Y'), $this->settings->title) ?></div>
+                <div><?= sprintf(language()->global->footer->copyright, date('Y'), settings()->title) ?></div>
             </div>
 
             <div class="col-12 col-sm-4 mb-4 mb-sm-0">
@@ -19,9 +19,9 @@
                 <div class="mb-2">
                     <?php foreach(require APP_PATH . 'includes/admin_socials.php' as $key => $value): ?>
 
-                        <?php if(isset($this->settings->socials->{$key}) && !empty($this->settings->socials->{$key})): ?>
+                        <?php if(isset(settings()->socials->{$key}) && !empty(settings()->socials->{$key})): ?>
                             <span class="mr-2">
-                                <a target="_blank" href="<?= sprintf($value['format'], $this->settings->socials->{$key}) ?>" title="<?= $value['name'] ?>" class="no-underline">
+                                <a target="_blank" href="<?= sprintf($value['format'], settings()->socials->{$key}) ?>" title="<?= $value['name'] ?>" class="no-underline">
                                     <i class="<?= $value['icon'] ?> fa-fw fa-lg"></i>
                                 </a>
                             </span>
@@ -32,10 +32,10 @@
 
                 <?php if(count(\Altum\Language::$languages) > 1): ?>
                     <div class="dropdown mb-2">
-                        <a class="dropdown-toggle clickable" id="language_switch" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-fw fa-language text-muted"></i> <?= $this->language->global->language ?></a>
+                        <a class="dropdown-toggle clickable" id="language_switch" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-fw fa-language text-muted"></i> <?= language()->global->language ?></a>
 
                         <div class="dropdown-menu" aria-labelledby="language_switch">
-                            <h6 class="dropdown-header"><?= $this->language->global->choose_language ?></h6>
+                            <h6 class="dropdown-header"><?= language()->global->choose_language ?></h6>
                             <?php foreach(\Altum\Language::$languages as $language_name): ?>
                                 <a class="dropdown-item" href="<?= url((\Altum\Routing\Router::$controller_key == 'index' ? 'index' : $_GET['altum']) . '?language=' . $language_name) ?>">
                                     <?php if($language_name == \Altum\Language::$language): ?>
@@ -54,10 +54,10 @@
                 <?php if(count(\Altum\ThemeStyle::$themes) > 1): ?>
                     <div class="mb-2">
                         <a href="#" data-choose-theme-style="dark" class="<?= \Altum\ThemeStyle::get() == 'dark' ? 'd-none' : null ?>">
-                            <i class="fa fa-fw fa-sm fa-moon text-muted mr-1"></i> <?= sprintf($this->language->global->theme_style, $this->language->global->theme_style_dark) ?>
+                            <i class="fa fa-fw fa-sm fa-moon text-muted mr-1"></i> <?= sprintf(language()->global->theme_style, language()->global->theme_style_dark) ?>
                         </a>
                         <a href="#" data-choose-theme-style="light" class="<?= \Altum\ThemeStyle::get() == 'light' ? 'd-none' : null ?>">
-                            <i class="fa fa-fw fa-sm fa-sun text-muted mr-1"></i> <?= sprintf($this->language->global->theme_style, $this->language->global->theme_style_light) ?>
+                            <i class="fa fa-fw fa-sm fa-sun text-muted mr-1"></i> <?= sprintf(language()->global->theme_style, language()->global->theme_style_light) ?>
                         </a>
                     </div>
 

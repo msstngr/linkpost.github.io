@@ -50,9 +50,11 @@ require_once APP_PATH . 'core/Model.php';
 require_once APP_PATH . 'core/View.php';
 require_once APP_PATH . 'core/Middleware.php';
 require_once APP_PATH . 'core/Language.php';
+require_once APP_PATH . 'core/Settings.php';
 require_once APP_PATH . 'core/Title.php';
 require_once APP_PATH . 'core/Meta.php';
 require_once APP_PATH . 'core/Database.php';
+require_once APP_PATH . 'core/MysqliDb.php';
 require_once APP_PATH . 'core/Logger.php';
 
 /* Load the middlewares */
@@ -66,6 +68,7 @@ require_once APP_PATH . 'models/User.php';
 require_once APP_PATH . 'models/Settings.php';
 require_once APP_PATH . 'models/Domain.php';
 require_once APP_PATH . 'models/Project.php';
+require_once APP_PATH . 'models/Link.php';
 
 /* Load some helpers */
 require_once APP_PATH . 'helpers/Cache.php';
@@ -82,6 +85,8 @@ require_once APP_PATH . 'helpers/notifications.php';
 require_once APP_PATH . 'helpers/others.php';
 require_once APP_PATH . 'helpers/Paginator.php';
 require_once APP_PATH . 'helpers/Filters.php';
+require_once APP_PATH . 'helpers/Alerts.php';
+require_once APP_PATH . 'helpers/core.php';
 
 /* Autoload for vendor */
 require_once ROOT_PATH . 'vendor/autoload.php';

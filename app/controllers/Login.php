@@ -2,13 +2,12 @@
 
 namespace Altum\Controllers;
 
+use Altum\Alerts;
 use Altum\Captcha;
 use Altum\Database\Database;
-use Altum\Language;
 use Altum\Logger;
 use Altum\Middlewares\Authentication;
 use Altum\Models\User;
-use MaxMind\Db\Reader;
 
 class Login extends Controller {
 
@@ -16,7 +15,7 @@ class Login extends Controller {
 
         Authentication::guard('guest');
 
-        $method	= (isset($this->params[0])) ? $this->params[0] : false;
+        $method	= (isset($this->params[0])) ? $this->params[0] : null;
         $redirect = isset($_GET['redirect']) ? Database::clean_string($_GET['redirect']) : 'dashboard';
 
         /* Default values */
@@ -26,11 +25,7 @@ class Login extends Controller {
         ];
 
         /* Initiate captcha */
-        $captcha = new Captcha([
-            'type' => $this->settings->captcha->type,
-            'recaptcha_public_key' => $this->settings->captcha->recaptcha_public_key,
-            'recaptcha_private_key' => $this->settings->captcha->recaptcha_private_key
-        ]);
+        $captcha = new Captcha();
 
         /* One time login */
         if($method == 'one-time-login-code') {
@@ -41,51 +36,51 @@ class Login extends Controller {
             }
 
             /* Try to get the user from the database */
-            $login_account = Database::get(['user_id', 'active'], 'users', ['one_time_login_code' => $one_time_login_code]);
+            $user = db()->where('one_time_login_code', $one_time_login_code)->getOne('users', ['user_id', 'active']);
 
-            if(!$login_account) {
+            if(!$user) {
                 redirect('login');
             }
 
-            if($login_account->active != 1) {
-                $_SESSION['error'][] = $this->language->login->error_message->user_not_active;
+            if($user->active != 1) {
+                Alerts::add_error(language()->login->error_message->user_not_active);
                 redirect('login');
             }
 
             /* Login the user */
-            $_SESSION['user_id'] = $login_account->user_id;
+            $_SESSION['user_id'] = $user->user_id;
 
-            (new User())->login_aftermath_update($login_account->user_id);
+            (new User())->login_aftermath_update($user->user_id);
 
             /* Remove one time login */
-            Database::$database->query("UPDATE `users` SET `one_time_login_code` = NULL WHERE `user_id` = {$login_account->user_id}");
+            db()->where('user_id', $user->user_id)->update('users', ['one_time_login_code' => null]);
 
             /* Set a welcome message */
-            $_SESSION['info'][] = $this->language->login->info_message->logged_in;
+            Alerts::add_info(language()->login->info_message->logged_in);
 
             redirect($redirect);
         }
 
         /* Facebook Login / Register */
-        if($this->settings->facebook->is_enabled && !empty($this->settings->facebook->app_id) && !empty($this->settings->facebook->app_secret)) {
+        if(settings()->facebook->is_enabled && !empty(settings()->facebook->app_id) && !empty(settings()->facebook->app_secret)) {
 
             $facebook = new \Facebook\Facebook([
-                'app_id' => $this->settings->facebook->app_id,
-                'app_secret' => $this->settings->facebook->app_secret,
+                'app_id' => settings()->facebook->app_id,
+                'app_secret' => settings()->facebook->app_secret,
                 'default_graph_version' => 'v3.2',
             ]);
 
             $facebook_helper = $facebook->getRedirectLoginHelper();
-            $facebook_login_url = $facebook->getRedirectLoginHelper()->getLoginUrl(url('login/facebook'), ['email', 'public_profile']);
+            $facebook_login_url = $facebook->getRedirectLoginHelper()->getLoginUrl(SITE_URL . 'login/facebook', ['email', 'public_profile']);
 
             /* Check for the redirect after the oauth checkin */
             if($method == 'facebook') {
                 try {
-                    $facebook_access_token = $facebook_helper->getAccessToken(url('login/facebook'));
+                    $facebook_access_token = $facebook_helper->getAccessToken(SITE_URL . 'login/facebook');
                 } catch(\Facebook\Exceptions\FacebookResponseException $e) {
-                    $_SESSION['error'][] = 'Graph returned an error: ' . $e->getMessage();
+                    Alerts::add_error('Graph returned an error: ' . $e->getMessage());
                 } catch(\Facebook\Exceptions\FacebookSDKException $e) {
-                    $_SESSION['error'][] = 'Facebook SDK returned an error: ' . $e->getMessage();
+                    Alerts::add_error('Facebook SDK returned an error: ' . $e->getMessage());
                 }
             }
 
@@ -98,7 +93,7 @@ class Login extends Controller {
                 $facebook_token_metadata = $facebook_oAuth2_client->debugToken($facebook_access_token);
 
                 /* Validation */
-                $facebook_token_metadata->validateAppId($this->settings->facebook->app_id);
+                $facebook_token_metadata->validateAppId(settings()->facebook->app_id);
                 $facebook_token_metadata->validateExpiration();
 
                 if(!$facebook_access_token->isLongLived()) {
@@ -106,16 +101,16 @@ class Login extends Controller {
                     try {
                         $facebook_access_token = $facebook_oAuth2_client->getLongLivedAccessToken($facebook_access_token);
                     } catch (\Facebook\Exceptions\FacebookSDKException $e) {
-                        $_SESSION['error'][] = 'Error getting long-lived access token: ' . $facebook_helper->getMessage();
+                        Alerts::add_error('Error getting long-lived access token: ' . $facebook_helper->getMessage());
                     }
                 }
 
                 try {
                     $response = $facebook->get('/me?fields=id,name,email', $facebook_access_token);
                 } catch(\Facebook\Exceptions\FacebookResponseException $e) {
-                    $_SESSION['error'][] = 'Graph returned an error: ' . $e->getMessage();
+                    Alerts::add_error('Graph returned an error: ' . $e->getMessage());
                 } catch(\Facebook\Exceptions\FacebookSDKException $e) {
-                    $_SESSION['error'][] = 'Facebook SDK returned an error: ' . $e->getMessage();
+                    Alerts::add_error('Facebook SDK returned an error: ' . $e->getMessage());
                 }
 
                 if(isset($response)) {
@@ -126,13 +121,13 @@ class Login extends Controller {
 
                     /* Check if email is actually not null */
                     if(is_null($email)) {
-                        $_SESSION['error'][] = $this->language->login->error_message->email_is_null;
+                        Alerts::add_error(language()->login->error_message->email_is_null);
 
                         redirect('login');
                     }
 
                     /* If the user is already in the system, log him in */
-                    if($user = Database::get(['user_id'], 'users', ['email' => $email])) {
+                    if($user = db()->where('email', $email)->getOne('users', ['user_id'])) {
                         $_SESSION['user_id'] = $user->user_id;
 
                         (new User())->login_aftermath_update($user->user_id);
@@ -143,18 +138,18 @@ class Login extends Controller {
                     /* Create a new account */
                     else {
 
-                        if(empty($_SESSION['error'])) {
+                        if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
 
                             /* Determine what plan is set by default */
                             $plan_id                    = 'free';
-                            $plan_settings              = json_encode($this->settings->plan_free->settings);
+                            $plan_settings              = json_encode(settings()->plan_free->settings);
                             $plan_expiration_date       = \Altum\Date::$date;
 
-                            /* When only the trial plan is available make that the default one */
-                            if(!$this->settings->plan_free->status && $this->settings->plan_trial->status) {
+                            /* When only the trial package is available make that the default one */
+                            if(!settings()->plan_free->status && settings()->plan_trial->status) {
                                 $plan_id                = 'trial';
-                                $plan_settings          = json_encode($this->settings->plan_trial->settings);
-                                $plan_expiration_date   = (new \DateTime())->modify('+' . $this->settings->plan_trial->days . ' days')->format('Y-m-d H:i:s');
+                                $plan_settings          = json_encode(settings()->plan_trial->settings);
+                                $plan_expiration_date   = (new \DateTime())->modify('+' . settings()->plan_trial->days . ' days')->format('Y-m-d H:i:s');
                             }
 
                             $registered_user_id = (new User())->create(
@@ -167,28 +162,27 @@ class Login extends Controller {
                                 $plan_id,
                                 $plan_settings,
                                 $plan_expiration_date,
-                                $this->settings->default_timezone
+                                settings()->default_timezone
                             );
 
                             /* Log the action */
-                            Logger::users($registered_user_id, 'register.facebook_register');
+                            Logger::users($registered_user_id, 'register.facebook_success');
 
                             /* Send notification to admin if needed */
-                            if($this->settings->email_notifications->new_user && !empty($this->settings->email_notifications->emails)) {
+                            if(settings()->email_notifications->new_user && !empty(settings()->email_notifications->emails)) {
 
                                 send_mail(
-                                    $this->settings,
-                                    explode(',', $this->settings->email_notifications->emails),
-                                    $this->language->global->emails->admin_new_user_notification->subject,
-                                    sprintf($this->language->global->emails->admin_new_user_notification->body, $name, $email)
+                                    explode(',', settings()->email_notifications->emails),
+                                    language()->global->emails->admin_new_user_notification->subject,
+                                    sprintf(language()->global->emails->admin_new_user_notification->body, $name, $email)
                                 );
 
                             }
 
                             /* Send webhook notification if needed */
-                            if($this->settings->webhooks->user_new) {
+                            if(settings()->webhooks->user_new) {
 
-                                \Unirest\Request::post($this->settings->webhooks->user_new, [], [
+                                \Unirest\Request::post(settings()->webhooks->user_new, [], [
                                     'user_id' => $registered_user_id,
                                     'email' => $email,
                                     'name' => $name
@@ -196,11 +190,11 @@ class Login extends Controller {
 
                             }
 
+                            /* Set a nice success message */
+                            Alerts::add_success(language()->register->success_message->login);
+
                             /* Log the user in and redirect him */
                             $_SESSION['user_id'] = $registered_user_id;
-                            $_SESSION['success'][] = $this->language->register->success_message->login;
-
-                            Logger::users($registered_user_id, 'login.success');
 
                             redirect($redirect);
                         }
@@ -217,77 +211,80 @@ class Login extends Controller {
             $values['password'] = $_POST['password'];
 
             /* Check for any errors */
-            if($this->settings->captcha->login_is_enabled && !$captcha->is_valid()) {
-                $_SESSION['error'][] = $this->language->global->error_message->invalid_captcha;
+            $required_fields = ['email', 'password'];
+            foreach($required_fields as $field) {
+                if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]))) {
+                    Alerts::add_field_error($field, language()->global->error_message->empty_field);
+                }
             }
 
-            if(empty($_POST['email']) || empty($_POST['password'])) {
-                $_SESSION['error'][] = $this->language->global->error_message->empty_fields;
+            if(settings()->captcha->login_is_enabled && !$captcha->is_valid()) {
+                Alerts::add_field_error('captcha', language()->global->error_message->invalid_captcha);
             }
 
             /* Try to get the user from the database */
-            $result = Database::$database->query("SELECT `user_id`, `email`, `active`, `password`, `token_code`, `total_logins`, `twofa_secret` FROM `users` WHERE `email` = '{$_POST['email']}'");
-            $login_account = $result->num_rows ? $result->fetch_object() : false;
+            $user = db()->where('email', $_POST['email'])->getOne('users', ['user_id', 'email', 'active', 'password', 'token_code', 'twofa_secret']);
 
-            if(!$login_account) {
-                $_SESSION['error'][] = $this->language->login->error_message->wrong_login_credentials;
+            if(!$user) {
+                Alerts::add_error(language()->login->error_message->wrong_login_credentials);
             } else {
 
-                if($login_account->active != 1) {
-                    $_SESSION['error'][] = $this->language->login->error_message->user_not_active;
+                if($user->active != 1) {
+                    Alerts::add_error(language()->login->error_message->user_not_active);
                 } else
 
-                    if(!password_verify($_POST['password'], $login_account->password)) {
-                        Logger::users($login_account->user_id, 'login.wrong_password');
+                    if(!password_verify($_POST['password'], $user->password)) {
+                        Logger::users($user->user_id, 'login.wrong_password');
 
-                        $_SESSION['error'][] = $this->language->login->error_message->wrong_login_credentials;
+                        Alerts::add_error(language()->login->error_message->wrong_login_credentials);
                     }
 
             }
 
             /* Check if the user has Two-factor Authentication enabled */
-            if($login_account && $login_account->twofa_secret) {
+            if($user && $user->twofa_secret) {
 
                 if($_POST['twofa_token']) {
 
-                    $twofa = new \RobThree\Auth\TwoFactorAuth($this->settings->title, 6, 30);
-                    $twofa_check = $twofa->verifyCode($login_account->twofa_secret, $_POST['twofa_token']);
+                    $twofa = new \RobThree\Auth\TwoFactorAuth(settings()->title, 6, 30);
+                    $twofa_check = $twofa->verifyCode($user->twofa_secret, $_POST['twofa_token']);
 
                     if(!$twofa_check) {
-                        $_SESSION['error'][] = $this->language->login->error_message->twofa_token;
+                        Alerts::add_field_error('twofa_token', language()->login->error_message->twofa_token);
                     }
 
                 } else {
 
-                    $_SESSION['info'] = $this->language->login->info_message->twofa_token;
+                    Alerts::add_info(language()->login->info_message->twofa_token);
 
                 }
 
             }
 
-            if(empty($_SESSION['error']) && empty($_SESSION['info'])) {
+            if(!Alerts::has_field_errors() && !Alerts::has_errors() && !Alerts::has_infos()) {
 
                 /* If remember me is checked, log the user with cookies for 30 days else, remember just with a session */
                 if(isset($_POST['rememberme'])) {
-                    $token_code = $login_account->token_code;
+                    $token_code = $user->token_code;
 
                     /* Generate a new token */
-                    if(empty($login_account->token_code)) {
-                        $token_code = md5($login_account->email . microtime());
+                    if(empty($user->token_code)) {
+                        $token_code = md5($user->email . microtime());
 
-                        Database::update('users', ['token_code' => $token_code], ['user_id' => $login_account->user_id]);
+                        db()->where('user_id', $user->user_id)->update('users', ['token_code' => $token_code]);
                     }
 
-                    setcookie('email', $login_account->email, time()+60*60*24*30, COOKIE_PATH);
+                    setcookie('email', $user->email, time()+60*60*24*30, COOKIE_PATH);
                     setcookie('token_code', $token_code, time()+60*60*24*30, COOKIE_PATH);
 
                 } else {
-                    $_SESSION['user_id'] = $login_account->user_id;
+                    $_SESSION['user_id'] = $user->user_id;
                 }
 
-                (new User())->login_aftermath_update($login_account->user_id);
+                (new User())->login_aftermath_update($user->user_id);
 
-                $_SESSION['info'][] = $this->language->login->info_message->logged_in;
+                Alerts::add_info(language()->login->info_message->logged_in);
+
                 redirect($redirect);
             }
         }
@@ -297,7 +294,7 @@ class Login extends Controller {
             'captcha' => $captcha,
             'values' => $values,
             'facebook_login_url' => $facebook_login_url ?? null,
-            'login_account' => $login_account ?? null
+            'user' => $user ?? null
         ];
 
         $view = new \Altum\Views\View('login/index', (array) $this);

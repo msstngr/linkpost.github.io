@@ -2,16 +2,13 @@
 
 namespace Altum\Controllers;
 
+use Altum\Alerts;
 use Altum\Database\Database;
-use Altum\Logger;
 use Altum\Middlewares\Csrf;
-use Altum\Middlewares\Authentication;
 
 class AdminDomainCreate extends Controller {
 
     public function index() {
-
-        Authentication::guard('admin');
 
         /* Default variables */
         $values = [
@@ -25,6 +22,7 @@ class AdminDomainCreate extends Controller {
             $_POST['scheme'] = isset($_POST['scheme']) && in_array($_POST['scheme'], ['http://', 'https://']) ? Database::clean_string($_POST['scheme']) : 'https://';
             $_POST['host'] = trim(Database::clean_string($_POST['host']));
             $_POST['custom_index_url'] = trim(Database::clean_string($_POST['custom_index_url']));
+            $_POST['custom_not_found_url'] = trim(Database::clean_string($_POST['custom_not_found_url']));
             $_POST['is_enabled'] = (int) (bool) $_POST['is_enabled'];
 
             /* Default variables */
@@ -32,34 +30,37 @@ class AdminDomainCreate extends Controller {
             $values['host'] = $_POST['host'];
             $values['custom_index_url'] = $_POST['custom_index_url'];
 
-            /* Must have fields */
-            $required_fields = ['scheme', 'host'];
-
-            /* Check for the required fields */
+            /* Check for any errors */
+            $required_fields = ['host'];
             foreach($required_fields as $field) {
                 if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]))) {
-                    $_SESSION['error'][] = $this->language->global->error_message->empty_fields;
-                    break 1;
+                    Alerts::add_field_error($field, language()->global->error_message->empty_field);
                 }
             }
 
             if(!Csrf::check()) {
-                $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
+                Alerts::add_error(language()->global->error_message->invalid_csrf_token);
             }
 
             /* If there are no errors continue the registering process */
-            if(empty($_SESSION['error'])) {
+            if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
                 /* Define some needed variables */
                 $type = 1;
 
                 /* Add the row to the database */
-                $stmt = Database::$database->prepare("INSERT INTO `domains` (`user_id`, `scheme`, `host`, `custom_index_url`, `type`, `is_enabled`, `date`) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param('sssssss', $this->user->user_id, $_POST['scheme'], $_POST['host'], $_POST['custom_index_url'], $type, $_POST['is_enabled'], \Altum\Date::$date);
-                $stmt->execute();
-                $stmt->close();
+                db()->insert('domains', [
+                    'user_id' => $this->user->user_id,
+                    'scheme' => $_POST['scheme'],
+                    'host' => $_POST['host'],
+                    'custom_index_url' => $_POST['custom_index_url'],
+                    'custom_not_found_url' => $_POST['custom_not_found_url'],
+                    'type' => $type,
+                    'is_enabled' => $_POST['is_enabled'],
+                    'datetime' => \Altum\Date::$date,
+                ]);
 
-                /* Success message */
-                $_SESSION['success'][] = $this->language->global->success_message->basic;
+                /* Set a nice success message */
+                Alerts::add_success(language()->global->success_message->basic);
 
                 /* Redirect */
                 redirect('admin/domains');

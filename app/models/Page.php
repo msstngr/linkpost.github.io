@@ -2,8 +2,6 @@
 
 namespace Altum\Models;
 
-use Altum\Database\Database;
-
 class Page extends Model {
 
     public function get_pages($position) {
@@ -15,7 +13,7 @@ class Page extends Model {
         /* Set cache if not existing */
         if(is_null($cache_instance->get())) {
 
-            $result = Database::$database->query("SELECT `url`, `title`, `type` FROM `pages` WHERE `position` = '{$position}' ORDER BY `order`");
+            $result = database()->query("SELECT `url`, `title`, `type` FROM `pages` WHERE `position` = '{$position}' ORDER BY `order`");
 
             while($row = $result->fetch_object()) {
 

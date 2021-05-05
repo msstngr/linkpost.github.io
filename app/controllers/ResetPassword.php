@@ -2,9 +2,10 @@
 
 namespace Altum\Controllers;
 
-use Altum\Database\Database;
+use Altum\Alerts;
 use Altum\Logger;
 use Altum\Middlewares\Authentication;
+use Altum\Models\User;
 
 class ResetPassword extends Controller {
 
@@ -12,42 +13,48 @@ class ResetPassword extends Controller {
 
         Authentication::guard('guest');
 
-        $email = (isset($this->params[0])) ? $this->params[0] : false;
-        $lost_password_code = (isset($this->params[1])) ? $this->params[1] : false;
+        $email = (isset($this->params[0])) ? $this->params[0] : null;
+        $lost_password_code = (isset($this->params[1])) ? $this->params[1] : null;
 
         if(!$email || !$lost_password_code) redirect();
 
         /* Check if the lost password code is correct */
-        $user_id = Database::simple_get('user_id', 'users', ['email' => $email, 'lost_password_code' => $lost_password_code]);
+        $user = db()->where('email', $email)->where('lost_password_code', $lost_password_code)->getOne('users', ['user_id']);
 
-        if($user_id < 1 || strlen($lost_password_code) < 1) redirect();
+        if($user->user_id < 1 || strlen($lost_password_code) < 1) redirect();
 
         if(!empty($_POST)) {
             /* Check for any errors */
             if(strlen(trim($_POST['new_password'])) < 6) {
-                $_SESSION['error'][] = $this->language->reset_password->error_message->short_password;
+                Alerts::add_field_error('new_password', language()->reset_password->error_message->short_password);
             }
             if($_POST['new_password'] !== $_POST['repeat_password']) {
-                $_SESSION['error'][] = $this->language->reset_password->error_message->passwords_not_matching;
+                Alerts::add_field_error('repeat_password', language()->reset_password->error_message->passwords_not_matching);
             }
 
-            if(empty($_SESSION['error'])) {
+            if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
                 /* Encrypt the new password */
                 $new_password = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
 
                 /* Update the password & empty the reset code from the database */
-                $stmt = Database::$database->prepare("UPDATE `users` SET `password` = ?, `twofa_secret` = NULL, `lost_password_code` = 0  WHERE `user_id` = ?");
-                $stmt->bind_param('ss', $new_password, $user_id);
-                $stmt->execute();
-                $stmt->close();
+                db()->where('user_id', $user->user_id)->update('users', [
+                    'password' => $new_password,
+                    'twofa_secret' => null,
+                    'lost_password_code' => null
+                ]);
 
-                Logger::users($user_id, 'reset_password.reset');
+                Logger::users($user->user_id, 'reset_password.success');
 
-                /* Store success message */
-                $_SESSION['success'][] = $this->language->reset_password->success_message->password_updated;
+                /* Set a nice success message */
+                Alerts::add_success(language()->reset_password->success_message);
+
+                /* Log the user in */
+                $_SESSION['user_id'] = $user->user_id;
+                (new User())->login_aftermath_update($user->user_id);
+                Alerts::add_info(language()->login->info_message->logged_in);
 
                 /* Clear the cache */
-                \Altum\Cache::$adapter->deleteItemsByTag('user_id=' . $user_id);
+                \Altum\Cache::$adapter->deleteItemsByTag('user_id=' . $user->user_id);
 
                 redirect('login');
             }

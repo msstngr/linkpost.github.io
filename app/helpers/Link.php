@@ -73,7 +73,7 @@ class Link {
             'links' => $links
         ];
 
-        $view = new \Altum\Views\View('link-path/partials/biolink', (array) $tthis);
+        $view = new \Altum\Views\View('l/partials/biolink', (array) $tthis);
 
         return $view->run($data);
 
@@ -136,7 +136,7 @@ class Link {
 
                 /* Animation */
                 if($link->settings->animation) {
-                    $link->design->link_class .= ' animate__animated animate__infinite animate__' . $link->settings->animation . ' animate__delay-2s';
+                    $link->design->link_class .= ' animate__animated animate__' . $link->settings->animation_runs . ' animate__' . $link->settings->animation . ' animate__delay-2s';
                 }
 
                 /* UTM Parameters */
@@ -145,7 +145,7 @@ class Link {
                     $link->utm_query = '?utm_medium=' . $link->utm->medium . '&utm_source=' . $link->utm->source . '&utm_campaign=' . $link->settings->name;
                 }
 
-                $view_path = 'link-path/biolink_blocks/' . $link->subtype;
+                $view_path = 'l/biolink_blocks/' . $link->subtype;
 
             break;
 
@@ -162,7 +162,7 @@ class Link {
 
                 }
 
-                $view_path = 'link-path/biolink_blocks/' . $link->subtype;
+                $view_path = 'l/biolink_blocks/' . $link->subtype;
 
                 break;
 
@@ -177,7 +177,7 @@ class Link {
                     $link->utm_query = '?utm_medium=' . $link->utm->medium . '&utm_source=' . $link->utm->source . '&utm_campaign=' . $link->settings->name;
                 }
 
-                $view_path = 'link-path/biolink_blocks/' . $link->subtype;
+                $view_path = 'l/biolink_blocks/' . $link->subtype;
 
                 break;
 
@@ -186,7 +186,7 @@ class Link {
                 if(preg_match('/^(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((?:\w|-){11})(?:&list=(\S+))?$/', $link->location_url, $match)) {
                     $data['embed'] = $match[1];
 
-                    $view_path = 'link-path/biolink_blocks/' . $link->subtype;
+                    $view_path = 'l/biolink_blocks/' . $link->subtype;
                 }
 
                 break;
@@ -196,7 +196,7 @@ class Link {
                 if(preg_match('/(soundcloud\.com)/', $link->location_url)) {
                     $data['embed'] = $link->location_url;
 
-                    $view_path = 'link-path/biolink_blocks/' . $link->subtype;
+                    $view_path = 'l/biolink_blocks/' . $link->subtype;
                 }
 
                 break;
@@ -206,7 +206,7 @@ class Link {
                 if(preg_match('/https:\/\/(player\.)?vimeo\.com(\/video)?\/(\d+)/', $link->location_url, $match)) {
                     $data['embed'] = $match[3];
 
-                    $view_path = 'link-path/biolink_blocks/' . $link->subtype;
+                    $view_path = 'l/biolink_blocks/' . $link->subtype;
                 }
 
                 break;
@@ -216,7 +216,7 @@ class Link {
                 if(preg_match('/^(?:https?:\/\/)?(?:www\.)?(?:twitch\.tv\/)(.+)$/', $link->location_url, $match)) {
                     $data['embed'] = $match[1];
 
-                    $view_path = 'link-path/biolink_blocks/' . $link->subtype;
+                    $view_path = 'l/biolink_blocks/' . $link->subtype;
                 }
 
                 break;
@@ -227,7 +227,7 @@ class Link {
                     $data['embed_type'] = $match[1];
                     $data['embed_value'] = $match[2];
 
-                    $view_path = 'link-path/biolink_blocks/' . $link->subtype;
+                    $view_path = 'l/biolink_blocks/' . $link->subtype;
                 }
 
                 break;
@@ -238,7 +238,7 @@ class Link {
                 if(preg_match('/^(?:https?:\/\/)?(?:www\.)?(?:tiktok\.com\/.+\/)(.+)$/', $link->location_url, $match)) {
                     $data['embed'] = $match[1];
 
-                    $view_path = 'link-path/biolink_blocks/' . $link->subtype;
+                    $view_path = 'l/biolink_blocks/' . $link->subtype;
                 }
 
                 break;
@@ -253,7 +253,7 @@ class Link {
                     if($position !== false) {
                         $link->location_url = str_replace('music.apple.com', 'embed.music.apple.com', $link->location_url);
 
-                        $view_path = 'link-path/biolink_blocks/' . $link->subtype;
+                        $view_path = 'l/biolink_blocks/' . $link->subtype;
                     }
 
                 }
@@ -272,7 +272,7 @@ class Link {
                         $link->location_url = str_replace('track/', 'tracks/', $link->location_url);
                         $link->location_url = str_replace('album/', 'albums/', $link->location_url);
 
-                        $view_path = 'link-path/biolink_blocks/' . $link->subtype;
+                        $view_path = 'l/biolink_blocks/' . $link->subtype;
                     }
 
                 }
@@ -289,7 +289,7 @@ class Link {
 
                         $link->location_url = substr_replace($link->location_url, '/embed', $position, 0);
 
-                        $view_path = 'link-path/biolink_blocks/' . $link->subtype;
+                        $view_path = 'l/biolink_blocks/' . $link->subtype;
                     }
 
                 }
@@ -299,7 +299,7 @@ class Link {
             case 'twitter_tweet':
 
                 if(preg_match('/(https:\/\/twitter\.com)/', $link->location_url)) {
-                    $view_path = 'link-path/biolink_blocks/' . $link->subtype;
+                    $view_path = 'l/biolink_blocks/' . $link->subtype;
                 }
 
                 break;
@@ -307,14 +307,14 @@ class Link {
             case 'instagram_media':
 
                 if(preg_match('/(https:\/\/www.instagram\.com)/', $link->location_url)) {
-                    $view_path = 'link-path/biolink_blocks/' . $link->subtype;
+                    $view_path = 'l/biolink_blocks/' . $link->subtype;
                 }
 
                 break;
 
             case 'custom_html':
 
-                $view_path = 'link-path/biolink_blocks/' . $link->subtype;
+                $view_path = 'l/biolink_blocks/' . $link->subtype;
 
                 break;
 
@@ -322,7 +322,7 @@ class Link {
 
                 $link->settings = json_decode($link->settings);
 
-                $view_path = 'link-path/biolink_blocks/' . $link->subtype;
+                $view_path = 'l/biolink_blocks/' . $link->subtype;
         }
 
         if(!isset($view_path)) return null;

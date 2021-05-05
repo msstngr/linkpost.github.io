@@ -2,7 +2,6 @@
 
 namespace Altum\Controllers;
 
-
 use Altum\Database\Database;
 
 class Index extends Controller {
@@ -16,7 +15,7 @@ class Index extends Controller {
         if($original_url_host != $request_url_host) {
 
             /* Make sure the custom domain is attached */
-            $domain = Database::get(['domain_id', 'custom_index_url'], 'domains', ['host' => $request_url_host]);
+            $domain = (new \Altum\Models\Domain())->get_domain_by_host($request_url_host);;
 
             /* Redirect if custom index is set */
             if(!empty($domain->custom_index_url)) {
@@ -30,8 +29,8 @@ class Index extends Controller {
 
 
         /* Custom index redirect if set */
-        if(!empty($this->settings->index_url)) {
-            header('Location: ' . $this->settings->index_url);
+        if(!empty(settings()->index_url)) {
+            header('Location: ' . settings()->index_url);
             die();
         }
 

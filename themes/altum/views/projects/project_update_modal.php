@@ -5,8 +5,8 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title"><?= $this->language->project_update_modal->header ?></h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="<?= $this->language->global->close ?>">
+                <h5 class="modal-title"><?= language()->project_update_modal->header ?></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="<?= language()->global->close ?>">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -20,12 +20,18 @@
                     <div class="notification-container"></div>
 
                     <div class="form-group">
-                        <label><i class="fa fa-fw fa-signature fa-sm mr-1"></i> <?= $this->language->project_update_modal->input->name ?></label>
-                        <input type="text" class="form-control" name="name"  />
+                        <label for="update_name"><i class="fa fa-fw fa-signature fa-sm mr-1"></i> <?= language()->projects->input->name ?></label>
+                        <input type="text" id="update_name" class="form-control" name="name"  />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="update_color"><i class="fa fa-fw fa-palette fa-sm text-muted mr-1"></i> <?= language()->projects->input->color ?></label>
+                        <input type="color" id="update_color" name="color" class="form-control" value="#000000" required="required" />
+                        <small class="text-muted form-text"><?= language()->projects->input->color_help ?></small>
                     </div>
 
                     <div class="text-center mt-4">
-                        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= $this->language->global->submit ?></button>
+                        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= language()->global->submit ?></button>
                     </div>
                 </form>
             </div>
@@ -40,9 +46,11 @@
     $('#project_update').on('show.bs.modal', event => {
         let project_id = $(event.relatedTarget).data('project-id');
         let name = $(event.relatedTarget).data('name');
+        let color = $(event.relatedTarget).data('color');
 
         $(event.currentTarget).find('input[name="project_id"]').val(project_id);
         $(event.currentTarget).find('input[name="name"]').val(name);
+        $(event.currentTarget).find('input[name="color"]').val(color);
     });
 
     $('form[name="project_update"]').on('submit', event => {

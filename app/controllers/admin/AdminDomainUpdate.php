@@ -2,58 +2,57 @@
 
 namespace Altum\Controllers;
 
+use Altum\Alerts;
 use Altum\Database\Database;
 use Altum\Middlewares\Csrf;
-use Altum\Models\Plan;
-use Altum\Middlewares\Authentication;
 
 class AdminDomainUpdate extends Controller {
 
     public function index() {
 
-        Authentication::guard('admin');
-
-        $domain_id = (isset($this->params[0])) ? $this->params[0] : false;
+        $domain_id = isset($this->params[0]) ? (int) $this->params[0] : null;
 
         /* Check if user exists */
-        if(!$domain = Database::get('*', 'domains', ['domain_id' => $domain_id])) {
+        if(!$domain = db()->where('domain_id', $domain_id)->getOne('domains')) {
             redirect('admin/domains');
         }
 
         /* Get some user details of the domain owner */
-        $user = Database::get(['user_id', 'email', 'name'], 'users', ['user_id' => $domain->user_id]);
+        $user = db()->where('user_id', $domain->user_id)->getOne('users', ['user_id', 'email', 'name']);
 
         if(!empty($_POST)) {
             /* Clean some posted variables */
             $_POST['scheme'] = isset($_POST['scheme']) && in_array($_POST['scheme'], ['http://', 'https://']) ? Database::clean_string($_POST['scheme']) : 'https://';
             $_POST['host'] = trim(Database::clean_string($_POST['host']));
             $_POST['custom_index_url'] = trim(Database::clean_string($_POST['custom_index_url']));
+            $_POST['custom_not_found_url'] = trim(Database::clean_string($_POST['custom_not_found_url']));
             $_POST['is_enabled'] = (int) (bool) $_POST['is_enabled'];
 
-            /* Must have fields */
-            $required_fields = ['scheme', 'host'];
-
-            /* Check for the required fields */
+            /* Check for any errors */
+            $required_fields = ['host'];
             foreach($required_fields as $field) {
                 if(!isset($_POST[$field]) || (isset($_POST[$field]) && empty($_POST[$field]))) {
-                    $_SESSION['error'][] = $this->language->global->error_message->empty_fields;
-                    break 1;
+                    Alerts::add_field_error($field, language()->global->error_message->empty_field);
                 }
             }
 
             if(!Csrf::check()) {
-                $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
+                Alerts::add_error(language()->global->error_message->invalid_csrf_token);
             }
 
-            if(empty($_SESSION['error'])) {
+            if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
 
                 /* Update the row of the database */
-                $stmt = Database::$database->prepare("UPDATE `domains` SET `scheme` = ?, `host` = ?, `custom_index_url` = ?, `is_enabled` = ? WHERE `domain_id` = ?");
-                $stmt->bind_param('sssss', $_POST['scheme'], $_POST['host'], $_POST['custom_index_url'], $_POST['is_enabled'], $domain->domain_id);
-                $stmt->execute();
-                $stmt->close();
+                db()->where('domain_id', $domain->domain_id)->update('domains', [
+                    'scheme' => $_POST['scheme'],
+                    'host' => $_POST['host'],
+                    'custom_index_url' => $_POST['custom_index_url'],
+                    'custom_not_found_url' => $_POST['custom_not_found_url'],
+                    'is_enabled' => $_POST['is_enabled'],
+                ]);
 
-                $_SESSION['success'][] = $this->language->global->success_message->basic;
+                /* Set a nice success message */
+                Alerts::add_success(language()->global->success_message->basic);
 
                 redirect('admin/domain-update/' . $domain->domain_id);
             }

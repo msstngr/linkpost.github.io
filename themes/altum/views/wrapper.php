@@ -1,12 +1,12 @@
 <?php defined('ALTUMCODE') || die() ?>
 <!DOCTYPE html>
-<html lang="<?= $this->language->language_code ?>">
+<html lang="<?= language()->language_code ?>">
     <head>
         <title><?= \Altum\Title::get() ?></title>
         <base href="<?= SITE_URL; ?>">
         <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <meta http-equiv="content-language" content="<?= $this->language->language_code ?>" />
+        <meta http-equiv="content-language" content="<?= language()->language_code ?>" />
 
         <?php if(\Altum\Meta::$description): ?>
             <meta name="description" content="<?= \Altum\Meta::$description ?>" />
@@ -15,8 +15,8 @@
             <meta name="keywords" content="<?= \Altum\Meta::$keywords ?>" />
         <?php endif ?>
 
-        <?php if(!empty($this->settings->favicon)): ?>
-            <link href="<?= SITE_URL . UPLOADS_URL_PATH . 'favicon/' . $this->settings->favicon ?>" rel="shortcut icon" />
+        <?php if(!empty(settings()->favicon)): ?>
+            <link href="<?= SITE_URL . UPLOADS_URL_PATH . 'favicon/' . settings()->favicon ?>" rel="shortcut icon" />
         <?php endif ?>
 
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
@@ -28,16 +28,18 @@
 
         <?= \Altum\Event::get_content('head') ?>
 
-        <?php if(!empty($this->settings->custom->head_js)): ?>
-            <?= $this->settings->custom->head_js ?>
+        <?php if(!empty(settings()->custom->head_js)): ?>
+            <?= settings()->custom->head_js ?>
         <?php endif ?>
 
-        <?php if(!empty($this->settings->custom->head_css)): ?>
-            <style><?= $this->settings->custom->head_css ?></style>
+        <?php if(!empty(settings()->custom->head_css)): ?>
+            <style><?= settings()->custom->head_css ?></style>
         <?php endif ?>
     </head>
 
     <body class="<?= \Altum\Routing\Router::$controller_settings['body_white'] ? 'bg-white' : null ?>" data-theme-style="<?= \Altum\ThemeStyle::get() ?>">
+        <?php require THEME_PATH . 'views/partials/announcements.php' ?>
+
         <?= $this->views['menu'] ?>
 
         <main class="animate__animated animate__fadeIn">

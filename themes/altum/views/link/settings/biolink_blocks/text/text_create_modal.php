@@ -5,13 +5,13 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title"><?= $this->language->create_biolink_text_modal->header ?></h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="<?= $this->language->global->close ?>">
+                <h5 class="modal-title"><?= language()->create_biolink_text_modal->header ?></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="<?= language()->global->close ?>">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
 
-            <p class="text-muted modal-subheader"><?= $this->language->create_biolink_text_modal->subheader ?></p>
+            <p class="text-muted modal-subheader"><?= language()->create_biolink_text_modal->subheader ?></p>
 
             <div class="modal-body">
                 <form name="create_biolink_text" method="post" role="form">
@@ -24,17 +24,17 @@
                     <div class="notification-container"></div>
 
                     <div class="form-group">
-                        <label><i class="fa fa-fw fa-heading fa-sm mr-1"></i> <?= $this->language->create_biolink_text_modal->input->title ?></label>
+                        <label><i class="fa fa-fw fa-heading fa-sm mr-1"></i> <?= language()->create_biolink_text_modal->input->title ?></label>
                         <input type="text" class="form-control" name="title" />
                     </div>
 
                     <div class="form-group">
-                        <label><i class="fa fa-fw fa-paragraph fa-sm mr-1"></i> <?= $this->language->create_biolink_text_modal->input->description ?></label>
+                        <label><i class="fa fa-fw fa-paragraph fa-sm mr-1"></i> <?= language()->create_biolink_text_modal->input->description ?></label>
                         <input type="text" class="form-control" name="description"  />
                     </div>
 
                     <div class="text-center mt-4">
-                        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= $this->language->global->submit ?></button>
+                        <button type="submit" name="submit" class="btn btn-block btn-primary"><?= language()->global->submit ?></button>
                     </div>
                 </form>
             </div>

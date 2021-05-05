@@ -1,6 +1,6 @@
 <?php
 
-function get_email_template($email_template_subject_array = [], $email_template_subject, $email_template_body_array = [], $email_template_body) {
+function get_email_template($email_template_subject_array, $email_template_subject, $email_template_body_array, $email_template_body) {
 
     $email_template_subject = str_replace(
         array_keys($email_template_subject_array),
@@ -41,11 +41,11 @@ function send_server_mail($to, $from, $title, $content) {
     return mail($to_processed, $title, $content, $headers);
 }
 
-function send_mail($settings, $to, $title, $content, $test = false) {
+function send_mail($to, $title, $content, $test = false) {
 
     /* Templating for the title */
     $replacers = [
-        '{{WEBSITE_TITLE}}' => $settings->title
+        '{{WEBSITE_TITLE}}' => settings()->title
     ];
 
     $title = str_replace(
@@ -60,9 +60,9 @@ function send_mail($settings, $to, $title, $content, $test = false) {
     $replacers = [
         '{{CONTENT}}'   => $content,
         '{{URL}}'       => url(),
-        '{{WEBSITE_TITLE}}' => $settings->title,
-        '{{HEADER}}'    => '<a href="' . url() . '">' . (!empty($settings->logo) ? '<img src="' . SITE_URL . UPLOADS_URL_PATH . 'logo/' . $settings->logo . '" class="logo" alt="' . $settings->title . '" />' : '<h2>' . $settings->title .  '</h2>') . '</a>',
-        '{{FOOTER}}'    => 'Copyright © <a href="' . url() . '">' . $settings->title . '</a>'
+        '{{WEBSITE_TITLE}}' => settings()->title,
+        '{{HEADER}}'    => '<a href="' . url() . '">' . (!empty(settings()->logo) ? '<img src="' . SITE_URL . UPLOADS_URL_PATH . 'logo/' . settings()->logo . '" class="logo" alt="' . settings()->title . '" />' : '<h2>' . settings()->title .  '</h2>') . '</a>',
+        '{{FOOTER}}'    => 'Copyright © <a href="' . url() . '">' . settings()->title . '</a>'
     ];
 
     $email_template = str_replace(
@@ -72,7 +72,7 @@ function send_mail($settings, $to, $title, $content, $test = false) {
     );
 
 
-    if(!empty($settings->smtp->host)) {
+    if(!empty(settings()->smtp->host)) {
 
         try {
             $mail = new \PHPMailer\PHPMailer\PHPMailer();
@@ -80,20 +80,20 @@ function send_mail($settings, $to, $title, $content, $test = false) {
             $mail->isSMTP();
             $mail->SMTPDebug = $test ? 2 : 0;
 
-            if ($settings->smtp->encryption != '0') {
-                $mail->SMTPSecure = $settings->smtp->encryption;
+            if (settings()->smtp->encryption != '0') {
+                $mail->SMTPSecure = settings()->smtp->encryption;
             }
 
-            $mail->SMTPAuth = $settings->smtp->auth;
+            $mail->SMTPAuth = settings()->smtp->auth;
             $mail->isHTML(true);
 
-            $mail->Host = $settings->smtp->host;
-            $mail->Port = $settings->smtp->port;
-            $mail->Username = $settings->smtp->username;
-            $mail->Password = $settings->smtp->password;
+            $mail->Host = settings()->smtp->host;
+            $mail->Port = settings()->smtp->port;
+            $mail->Username = settings()->smtp->username;
+            $mail->Password = settings()->smtp->password;
 
-            $mail->setFrom($settings->smtp->from, $settings->smtp->from_name);
-            $mail->addReplyTo($settings->smtp->from, $settings->smtp->from_name);
+            $mail->setFrom(settings()->smtp->from, settings()->smtp->from_name);
+            $mail->addReplyTo(settings()->smtp->from, settings()->smtp->from_name);
 
             /* Check if receipient is array or not */
             if(is_array($to)) {
@@ -134,7 +134,8 @@ function send_mail($settings, $to, $title, $content, $test = false) {
         }
 
     } else {
-        return send_server_mail($to, $settings->smtp->from, $title, $email_template);
+        return send_server_mail($to, settings()->smtp->from, $title, $email_template);
     }
 
 }
+

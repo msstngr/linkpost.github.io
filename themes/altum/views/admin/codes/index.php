@@ -2,26 +2,26 @@
 
 <?php if($data->codes_result->num_rows): ?>
 
-<div class="d-flex justify-content-between mb-4">
-    <h1 class="h3"><i class="fa fa-fw fa-xs fa-tags text-primary-900 mr-2"></i> <?= $this->language->admin_codes->header ?></h1>
+<div class="d-flex flex-column flex-md-row justify-content-between mb-4">
+    <h1 class="h3"><i class="fa fa-fw fa-xs fa-tags text-primary-900 mr-2"></i> <?= language()->admin_codes->header ?></h1>
 
     <div class="col-auto p-0">
-        <a href="<?= url('admin/code-create') ?>" class="btn btn-outline-primary"><i class="fa fa-fw fa-plus-circle"></i> <?= $this->language->admin_codes->create ?></a>
+        <a href="<?= url('admin/code-create') ?>" class="btn btn-outline-primary"><i class="fa fa-fw fa-plus-circle"></i> <?= language()->admin_codes->create ?></a>
     </div>
 </div>
 
-<?php display_notifications() ?>
+<?= \Altum\Alerts::output_alerts() ?>
 
 <div class="table-responsive table-custom-container">
     <table class="table table-custom">
         <thead>
         <tr>
-            <th><?= $this->language->admin_codes->table->code ?></th>
-            <th><?= $this->language->admin_codes->table->type ?></th>
-            <th><?= $this->language->admin_codes->table->plan_id ?></th>
-            <th><?= $this->language->admin_codes->table->discount ?></th>
-            <th><?= $this->language->admin_codes->table->quantity ?></th>
-            <th><?= $this->language->admin_codes->table->redeemed_codes ?></th>
+            <th><?= language()->admin_codes->table->code ?></th>
+            <th><?= language()->admin_codes->table->type ?></th>
+            <th><?= language()->admin_codes->table->plan_id ?></th>
+            <th><?= language()->admin_codes->table->discount ?></th>
+            <th><?= language()->admin_codes->table->quantity ?></th>
+            <th><?= language()->admin_codes->table->redeemed_codes ?></th>
             <th></th>
         </tr>
         </thead>
@@ -29,19 +29,17 @@
             <?php while($row = $data->codes_result->fetch_object()): ?>
 
             <tr data-code-id="<?= $row->code_id ?>">
-                <td>
-                    <a href="<?= url('admin/code-update/' . $row->code_id) ?>"><?= $row->code ?></a>
-                </td>
+                <td><a href="<?= url('admin/code-update/' . $row->code_id) ?>"><?= $row->code ?></a></td>
                 <td><?= $row->type == 'discount' ? '<span class="badge badge-pill badge-success">' . $row->type . '</span>' : '<span class="badge badge-pill badge-primary">' . $row->type . '</span>' ?></td>
                 <td>
                     <span class="badge badge-pill badge-light">
-                        <?= $row->plan_name ?: $this->language->admin_codes->table->plan_id_null ?>
+                        <?= $row->plan_name ?: language()->admin_codes->table->plan_id_null ?>
                     </span>
                 </td>
                 <td><?= $row->discount . '%' ?></td>
                 <td><?= $row->quantity ?></td>
                 <td><i class="fa fa-fw fa-users text-muted"></i> <?= $row->redeemed ?></td>
-                <td><?= include_view(THEME_PATH . 'views/admin/partials/admin_code_dropdown_button.php', ['id' => $row->code_id]) ?></td>
+                <td><?= include_view(THEME_PATH . 'views/admin/codes/admin_code_dropdown_button.php', ['id' => $row->code_id]) ?></td>
             </tr>
 
             <?php endwhile ?>
@@ -57,11 +55,11 @@
     </div>
 
     <div class="d-flex flex-column">
-        <h1 class="h3"><?= $this->language->admin_codes->header_no_data ?></h1>
-        <p class="text-muted"><?= $this->language->admin_codes->subheader_no_data ?></p>
+        <h1 class="h3"><?= language()->admin_codes->header_no_data ?></h1>
+        <p class="text-muted"><?= language()->admin_codes->subheader_no_data ?></p>
 
         <div>
-            <a href="<?= url('admin/code-create') ?>" class="btn btn-primary"><i class="fa fa-fw fa-sm fa-plus-circle"></i> <?= $this->language->admin_codes->create ?></a>
+            <a href="<?= url('admin/code-create') ?>" class="btn btn-primary"><i class="fa fa-fw fa-sm fa-plus-circle"></i> <?= language()->admin_codes->create ?></a>
         </div>
     </div>
 </div>

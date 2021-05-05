@@ -2,19 +2,17 @@
 
 namespace Altum\Controllers;
 
+use Altum\Alerts;
 use Altum\Database\Database;
 use Altum\Middlewares\Csrf;
-use Altum\Middlewares\Authentication;
 
 class AdminCodeUpdate extends Controller {
 
     public function index() {
 
-        Authentication::guard('admin');
+        $code_id = isset($this->params[0]) ? (int) $this->params[0] : null;
 
-        $code_id = isset($this->params[0]) ? $this->params[0] : false;
-
-        if(!$code = Database::get('*', 'codes', ['code_id' => $code_id])) {
+        if(!$code = db()->where('code_id', $code_id)->getOne('codes')) {
             redirect('admin/codes');
         }
 
@@ -28,19 +26,23 @@ class AdminCodeUpdate extends Controller {
             $_POST['code'] = trim(get_slug($_POST['code'], '-', false));
 
             if(!Csrf::check()) {
-                $_SESSION['error'][] = $this->language->global->error_message->invalid_csrf_token;
+                Alerts::add_error(language()->global->error_message->invalid_csrf_token);
             }
 
-            if(empty($_SESSION['error'])) {
+            if(!Alerts::has_field_errors() && !Alerts::has_errors()) {
 
-                $stmt = $this->database->prepare("UPDATE `codes` SET `type` = ?, `days` = ?, `plan_id` = ?, `code` = ?, `discount` = ?, `quantity` = ? WHERE `code_id` = ?");
-                $stmt->bind_param('sssssss', $_POST['type'], $_POST['days'], $_POST['plan_id'], $_POST['code'], $_POST['discount'], $_POST['quantity'], $code_id);
-                $stmt->execute();
-                $stmt->close();
-
+                /* Database query */
+                db()->where('code_id', $code_id)->update('codes', [
+                    'type' => $_POST['type'],
+                    'days' => $_POST['days'],
+                    'plan_id' => $_POST['plan_id'],
+                    'code' => $_POST['code'],
+                    'discount' => $_POST['discount'],
+                    'quantity' => $_POST['quantity'],
+                ]);
 
                 /* Set a nice success message */
-                $_SESSION['success'][] = $this->language->global->success_message->basic;
+                Alerts::add_success(language()->global->success_message->basic);
 
                 /* Refresh the page */
                 redirect('admin/code-update/' . $code_id);
@@ -49,7 +51,8 @@ class AdminCodeUpdate extends Controller {
 
         }
 
-        $plans_result = $this->database->query("SELECT `plan_id`, `name` FROM `plans` WHERE `status` <> 0");
+        /* Get all the plans available */
+        $plans = db()->where('status', 0, '<>')->get('plans');
 
         /* Delete Modal */
         $view = new \Altum\Views\View('admin/codes/code_delete_modal', (array) $this);
@@ -59,7 +62,7 @@ class AdminCodeUpdate extends Controller {
         $data = [
             'code_id'       => $code_id,
             'code'          => $code,
-            'plans_result'  => $plans_result
+            'plans'  => $plans
         ];
 
         $view = new \Altum\Views\View('admin/code-update/index', (array) $this);

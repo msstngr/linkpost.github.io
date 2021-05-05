@@ -1,7 +1,7 @@
 <?php defined('ALTUMCODE') || die() ?>
 
 <div class="d-flex flex-column flex-md-row justify-content-between mb-3">
-    <h2 class="h4 mr-3"><?= $this->language->link->statistics->header ?></h2>
+    <h2 class="h4 mr-3"><?= language()->link->statistics->header ?></h2>
 
     <div>
         <button
@@ -13,10 +13,10 @@
         >
             <i class="fa fa-fw fa-calendar mr-1"></i>
             <span>
-                <?php if($data->date->start_date == $data->date->end_date): ?>
-                    <?= \Altum\Date::get($data->date->start_date, 2, \Altum\Date::$default_timezone) ?>
+                <?php if($data->datetime['start_date'] == $data->datetime['end_date']): ?>
+                    <?= \Altum\Date::get($data->datetime['start_date'], 2, \Altum\Date::$default_timezone) ?>
                 <?php else: ?>
-                    <?= \Altum\Date::get($data->date->start_date, 2, \Altum\Date::$default_timezone) . ' - ' . \Altum\Date::get($data->date->end_date, 2, \Altum\Date::$default_timezone) ?>
+                    <?= \Altum\Date::get($data->datetime['start_date'], 2, \Altum\Date::$default_timezone) . ' - ' . \Altum\Date::get($data->datetime['end_date'], 2, \Altum\Date::$default_timezone) ?>
                 <?php endif ?>
             </span>
             <i class="fa fa-fw fa-caret-down ml-1"></i>
@@ -28,9 +28,9 @@
 
 
     <div class="d-flex flex-column align-items-center justify-content-center">
-        <img src="<?= SITE_URL . ASSETS_URL_PATH . 'images/no_rows.svg' ?>" class="col-10 col-md-7 col-lg-5 mb-3" alt="<?= $this->language->link->statistics->no_data ?>" />
-        <h2 class="h4 text-muted mt-3"><?= $this->language->link->statistics->no_data ?></h2>
-        <p class="text-muted"><?= $this->language->link->statistics->no_data_help ?></p>
+        <img src="<?= SITE_URL . ASSETS_URL_PATH . 'images/no_rows.svg' ?>" class="col-10 col-md-7 col-lg-5 mb-3" alt="<?= language()->link->statistics->no_data ?>" />
+        <h2 class="h4 text-muted mt-3"><?= language()->link->statistics->no_data ?></h2>
+        <p class="text-muted"><?= language()->link->statistics->no_data_help ?></p>
     </div>
 
 <?php else: ?>
@@ -41,51 +41,51 @@
 
     <ul class="nav nav-pills flex-column flex-lg-row mb-4" role="tablist">
         <li class="nav-item">
-            <a class="nav-link <?= $data->type == 'overview' ? 'active' : null ?>" href="<?= url('link/' . $data->link->link_id . '/' . $data->method . '?type=overview&start_date=' . $data->date->start_date . '&end_date=' . $data->date->end_date) ?>">
+            <a class="nav-link <?= $data->type == 'overview' ? 'active' : null ?>" href="<?= url('link/' . $data->link->link_id . '/' . $data->method . '?type=overview&start_date=' . $data->datetime['start_date'] . '&end_date=' . $data->datetime['end_date']) ?>">
                 <i class="fa fa-fw fa-sm fa-list mr-1"></i>
-                <?= $this->language->link->statistics->overview ?>
+                <?= language()->link->statistics->overview ?>
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= in_array($data->type, ['country', 'city_name']) ? 'active' : null ?>" href="<?= url('link/' . $data->link->link_id . '/' . $data->method . '?type=country&start_date=' . $data->date->start_date . '&end_date=' . $data->date->end_date) ?>">
+            <a class="nav-link <?= in_array($data->type, ['country', 'city_name']) ? 'active' : null ?>" href="<?= url('link/' . $data->link->link_id . '/' . $data->method . '?type=country&start_date=' . $data->datetime['start_date'] . '&end_date=' . $data->datetime['end_date']) ?>">
                 <i class="fa fa-fw fa-sm fa-globe mr-1"></i>
-                <?= $this->language->link->statistics->country ?>
+                <?= language()->link->statistics->country ?>
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= in_array($data->type, ['referrer_host', 'referrer_path']) ? 'active' : null ?>" href="<?= url('link/' . $data->link->link_id . '/' . $data->method . '?type=referrer_host&start_date=' . $data->date->start_date . '&end_date=' . $data->date->end_date) ?>">
+            <a class="nav-link <?= in_array($data->type, ['referrer_host', 'referrer_path']) ? 'active' : null ?>" href="<?= url('link/' . $data->link->link_id . '/' . $data->method . '?type=referrer_host&start_date=' . $data->datetime['start_date'] . '&end_date=' . $data->datetime['end_date']) ?>">
                 <i class="fa fa-fw fa-sm fa-random mr-1"></i>
-                <?= $this->language->link->statistics->referrer_host ?>
+                <?= language()->link->statistics->referrer_host ?>
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= $data->type == 'device' ? 'active' : null ?>" href="<?= url('link/' . $data->link->link_id . '/' . $data->method . '?type=device&start_date=' . $data->date->start_date . '&end_date=' . $data->date->end_date) ?>">
+            <a class="nav-link <?= $data->type == 'device' ? 'active' : null ?>" href="<?= url('link/' . $data->link->link_id . '/' . $data->method . '?type=device&start_date=' . $data->datetime['start_date'] . '&end_date=' . $data->datetime['end_date']) ?>">
                 <i class="fa fa-fw fa-sm fa-laptop mr-1"></i>
-                <?= $this->language->link->statistics->device ?>
+                <?= language()->link->statistics->device ?>
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= $data->type == 'os' ? 'active' : null ?>" href="<?= url('link/' . $data->link->link_id . '/' . $data->method . '?type=os&start_date=' . $data->date->start_date . '&end_date=' . $data->date->end_date) ?>">
+            <a class="nav-link <?= $data->type == 'os' ? 'active' : null ?>" href="<?= url('link/' . $data->link->link_id . '/' . $data->method . '?type=os&start_date=' . $data->datetime['start_date'] . '&end_date=' . $data->datetime['end_date']) ?>">
                 <i class="fa fa-fw fa-sm fa-server mr-1"></i>
-                <?= $this->language->link->statistics->os ?>
+                <?= language()->link->statistics->os ?>
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= $data->type == 'browser' ? 'active' : null ?>" href="<?= url('link/' . $data->link->link_id . '/' . $data->method . '?type=browser&start_date=' . $data->date->start_date . '&end_date=' . $data->date->end_date) ?>">
+            <a class="nav-link <?= $data->type == 'browser' ? 'active' : null ?>" href="<?= url('link/' . $data->link->link_id . '/' . $data->method . '?type=browser&start_date=' . $data->datetime['start_date'] . '&end_date=' . $data->datetime['end_date']) ?>">
                 <i class="fa fa-fw fa-sm fa-window-restore mr-1"></i>
-                <?= $this->language->link->statistics->browser ?>
+                <?= language()->link->statistics->browser ?>
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= $data->type == 'language' ? 'active' : null ?>" href="<?= url('link/' . $data->link->link_id . '/' . $data->method . '?type=language&start_date=' . $data->date->start_date . '&end_date=' . $data->date->end_date) ?>">
+            <a class="nav-link <?= $data->type == 'language' ? 'active' : null ?>" href="<?= url('link/' . $data->link->link_id . '/' . $data->method . '?type=language&start_date=' . $data->datetime['start_date'] . '&end_date=' . $data->datetime['end_date']) ?>">
                 <i class="fa fa-fw fa-sm fa-language mr-1"></i>
-                <?= $this->language->link->statistics->language ?>
+                <?= language()->link->statistics->language ?>
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link <?= in_array($data->type, ['utm_source', 'utm_medium', 'utm_campaign']) ? 'active' : null ?>" href="<?= url('link/' . $data->link->link_id . '/' . $data->method . '?type=utm_source&start_date=' . $data->date->start_date . '&end_date=' . $data->date->end_date) ?>">
+            <a class="nav-link <?= in_array($data->type, ['utm_source', 'utm_medium', 'utm_campaign']) ? 'active' : null ?>" href="<?= url('link/' . $data->link->link_id . '/' . $data->method . '?type=utm_source&start_date=' . $data->datetime['start_date'] . '&end_date=' . $data->datetime['end_date']) ?>">
                 <i class="fa fa-fw fa-sm fa-link mr-1"></i>
-                <?= $this->language->link->statistics->utms ?>
+                <?= language()->link->statistics->utms ?>
             </a>
         </li>
     </ul>
@@ -108,18 +108,18 @@
 
     /* Daterangepicker */
     $('#daterangepicker').daterangepicker({
-        startDate: <?= json_encode($data->date->start_date) ?>,
-        endDate: <?= json_encode($data->date->end_date) ?>,
+        startDate: <?= json_encode($data->datetime['start_date']) ?>,
+        endDate: <?= json_encode($data->datetime['end_date']) ?>,
         minDate: $('#daterangepicker').data('min-date'),
         maxDate: $('#daterangepicker').data('max-date'),
         ranges: {
-            <?= json_encode($this->language->global->date->today) ?>: [moment(), moment()],
-            <?= json_encode($this->language->global->date->yesterday) ?>: [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-            <?= json_encode($this->language->global->date->last_7_days) ?>: [moment().subtract(6, 'days'), moment()],
-            <?= json_encode($this->language->global->date->last_30_days) ?>: [moment().subtract(29, 'days'), moment()],
-            <?= json_encode($this->language->global->date->this_month) ?>: [moment().startOf('month'), moment().endOf('month')],
-            <?= json_encode($this->language->global->date->last_month) ?>: [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
-            <?= json_encode($this->language->global->date->all_time) ?>: [moment($('#daterangepicker').data('min-date')), moment()]
+            <?= json_encode(language()->global->date->today) ?>: [moment(), moment()],
+            <?= json_encode(language()->global->date->yesterday) ?>: [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+            <?= json_encode(language()->global->date->last_7_days) ?>: [moment().subtract(6, 'days'), moment()],
+            <?= json_encode(language()->global->date->last_30_days) ?>: [moment().subtract(29, 'days'), moment()],
+            <?= json_encode(language()->global->date->this_month) ?>: [moment().startOf('month'), moment().endOf('month')],
+            <?= json_encode(language()->global->date->last_month) ?>: [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+            <?= json_encode(language()->global->date->all_time) ?>: [moment($('#daterangepicker').data('min-date')), moment()]
         },
         alwaysShowCalendars: true,
         linkedCalendars: false,
@@ -150,14 +150,14 @@
             labels: <?= $data->pageviews_chart['labels'] ?>,
             datasets: [
                 {
-                    label: <?= json_encode($this->language->link->statistics->pageviews) ?>,
+                    label: <?= json_encode(language()->link->statistics->pageviews) ?>,
                     data: <?= $data->pageviews_chart['pageviews'] ?? '[]' ?>,
                     backgroundColor: gradient,
                     borderColor: '#38B2AC',
                     fill: true
                 },
                 {
-                    label: <?= json_encode($this->language->link->statistics->visitors) ?>,
+                    label: <?= json_encode(language()->link->statistics->visitors) ?>,
                     data: <?= $data->pageviews_chart['visitors'] ?? '[]' ?>,
                     backgroundColor: gradient_white,
                     borderColor: '#383eb2',

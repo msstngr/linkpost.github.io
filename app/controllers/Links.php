@@ -2,26 +2,24 @@
 
 namespace Altum\Controllers;
 
-use Altum\Database\Database;
 use Altum\Middlewares\Authentication;
 use Altum\Models\Domain;
-use Altum\Models\Plan;
-use Altum\Routing\Router;
-use Altum\Title;
 
 class Links extends Controller {
 
     public function index() {
 
+        Authentication::guard();
+
         /* Prepare the filtering system */
         $filters = (new \Altum\Filters(['is_enabled', 'type', 'project_id'], ['url'], ['date', 'clicks', 'url']));
 
         /* Prepare the paginator */
-        $total_rows = Database::$database->query("SELECT COUNT(*) AS `total` FROM `links` WHERE `user_id` = {$this->user->user_id} AND (`subtype` = 'base' OR `subtype` = '') {$filters->get_sql_where()}")->fetch_object()->total ?? 0;
+        $total_rows = database()->query("SELECT COUNT(*) AS `total` FROM `links` WHERE `user_id` = {$this->user->user_id} AND (`subtype` = 'base' OR `subtype` = '') {$filters->get_sql_where()}")->fetch_object()->total ?? 0;
         $paginator = (new \Altum\Paginator($total_rows, $filters->get_results_per_page(), $_GET['page'] ?? 1, url('links?' . $filters->get_get() . '&page=%d')));
 
         /* Get the links list for the project */
-        $links_result = Database::$database->query("
+        $links_result = database()->query("
             SELECT 
                 `links`.*, `domains`.`scheme`, `domains`.`host`
             FROM 

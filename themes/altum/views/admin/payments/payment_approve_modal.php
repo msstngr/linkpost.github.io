@@ -8,17 +8,17 @@
                 <div class="d-flex justify-content-between mb-3">
                     <h5 class="modal-title">
                         <i class="fa fa-fw fa-sm fa-check text-primary-900 mr-2"></i>
-                        <?= $this->language->admin_payment_approve_modal->header ?>
+                        <?= language()->admin_payment_approve_modal->header ?>
                     </h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="<?= $this->language->global->close ?>">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="<?= language()->global->close ?>">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
 
-                <p class="text-muted"><?= $this->language->admin_payment_approve_modal->subheader ?></p>
+                <p class="text-muted"><?= language()->admin_payment_approve_modal->subheader ?></p>
 
                 <div class="mt-4">
-                    <a href="" id="payment_approve_modal_url" class="btn btn-lg btn-block btn-primary"><?= $this->language->global->submit ?></a>
+                    <a href="" id="payment_approve_modal_url" class="btn btn-lg btn-block btn-primary"><?= language()->global->submit ?></a>
                 </div>
             </div>
 
